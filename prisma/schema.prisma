@@ -1,0 +1,111 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Printer {
+  id                      String    @id @default(cuid())
+  nome                    String
+  modelo                  String?
+  consumoWatts            Float
+  preco                   Float
+  vidaUtilHoras           Float
+  custoManutencaoAno      Float     @default(0)
+  horasUsoAcumuladas      Float     @default(0.0) // Horas de uso acumuladas desde a última manutenção
+  ultimaManutencao        DateTime? // Data da última manutenção preventiva
+  intervaloManutencaoHoras Float    @default(200.0) // Intervalo em horas para manutenção preventiva
+  createdAt               DateTime  @default(now())
+}
+
+model Filament {
+  id                 String                 @id @default(cuid())
+  marca              String?
+  tipo               String                 // PLA, PETG, ABS, ASA, TPU, Resina
+  cor                String
+  precoPorKg         Float
+  pesoRestanteGramas Float                  @default(1000.0) // Peso restante em gramas
+  createdAt          DateTime               @default(now())
+  priceHistory       FilamentPriceHistory[]
+}
+
+model FilamentPriceHistory {
+  id         String   @id @default(cuid())
+  filamentId String
+  filament   Filament @relation(fields: [filamentId], references: [id], onDelete: Cascade)
+  precoPorKg Float
+  data       DateTime @default(now())
+}
+
+model Tinta {
+  id        String   @id @default(cuid())
+  nome      String
+  marca     String?
+  tipo      String   // Acrílica, Spray, Primer, Verniz, Esmalte, Óleo, Pincel/Insumo
+  cor       String?
+  volumeMl  Float    @default(0) // Volume da embalagem em ml
+  preco     Float    // Preço de compra em R$
+  createdAt DateTime @default(now())
+}
+
+
+model Peca {
+  id         String   @id @default(cuid())
+  nome       String
+  descricao  String?
+  categoria  String?
+  fotoUrl    String?
+  publicada  Boolean  @default(false)
+  status     String   @default("em_producao") // em_producao | pronta | vendida
+  createdAt  DateTime @default(now())
+
+  custoImpressao CustoImpressao?
+  custoPintura   CustoPintura?
+  custoEmbalagem CustoEmbalagem?
+  pedidos        Pedido[]
+}
+
+model Pedido {
+  id             String   @id @default(cuid())
+  clienteNome    String
+  clienteContato String?  // telefone/whatsapp
+  status         String   @default("pendente") // pendente | em_impressao | pintando | pronto | enviado | entregue
+  pecaId         String
+  peca           Peca     @relation(fields: [pecaId], references: [id], onDelete: Cascade)
+  quantidade     Int      @default(1)
+  precoAcordado  Float?
+  observacoes    String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model CustoImpressao {
+  id               String @id @default(cuid())
+  peca             Peca   @relation(fields: [pecaId], references: [id], onDelete: Cascade)
+  pecaId           String @unique
+  printerId        String
+  filamentId       String
+  pesoGramas       Float
+  tempoHoras       Float
+  tarifaEnergiaKwh Float
+}
+
+model CustoPintura {
+  id                 String @id @default(cuid())
+  peca               Peca   @relation(fields: [pecaId], references: [id], onDelete: Cascade)
+  pecaId             String @unique
+  custoTintas        Float
+  tempoHoras         Float
+  valorHoraMaoDeObra Float
+}
+
+model CustoEmbalagem {
+  id                String  @id @default(cuid())
+  peca              Peca    @relation(fields: [pecaId], references: [id], onDelete: Cascade)
+  pecaId            String  @unique
+  materialDescricao String?
+  custoUnitario     Float
+}

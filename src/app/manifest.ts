@@ -1,0 +1,21 @@
+import { MetadataRoute } from "next";
+
+export default function manifest(): MetadataRoute.Manifest {
+  return {
+    name: "PrintForge 3D — Gestão e Calculadora 3D",
+    short_name: "PrintForge 3D",
+    description: "Sistema completo de precificação, orçamentos em PDF e controle de produção 3D.",
+    start_url: "/admin",
+    display: "standalone",
+    background_color: "#020617",
+    theme_color: "#0d9488",
+    icons: [
+      {
+        src: "/icon.svg",
+        sizes: "any",
+        type: "image/svg+xml",
+        purpose: "maskable",
+      },
+    ],
+  };
+}
