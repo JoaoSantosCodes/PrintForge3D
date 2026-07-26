@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 // In-memory rate limiting map for login attempts (5 attempts per minute)
@@ -61,7 +62,7 @@ export async function cadastroAction(formData: FormData) {
 
     return {
       success: true,
-      message: "Seu cadastro foi enviado e aguarda aprovação de um administrador.",
+      message: "Enviamos um e-mail de confirmação. Confirme seu e-mail antes de aguardar aprovação do administrador.",
     };
   } catch (err: any) {
     if (err instanceof z.ZodError) {
@@ -116,7 +117,11 @@ export async function loginAction(formData: FormData) {
 
     if (authError) {
       recordFailedAttempt();
-      return { error: authError.message || "Falha na autenticação. Verifique suas credenciais." };
+      const msg = authError.message || "";
+      if (msg.toLowerCase().includes("email not confirmed") || msg.toLowerCase().includes("email_not_confirmed")) {
+        return { error: "Confirme seu e-mail antes de entrar." };
+      }
+      return { error: msg || "Falha na autenticação. Verifique suas credenciais." };
     }
     authUser = authData.user;
   } catch (err: any) {
@@ -130,7 +135,6 @@ export async function loginAction(formData: FormData) {
   });
 
   if (!profile && authUser) {
-    // Se o usuário existe no Supabase Auth mas ainda não tem perfil no Prisma
     profile = await prisma.profile.create({
       data: {
         id: authUser.id,
@@ -143,7 +147,6 @@ export async function loginAction(formData: FormData) {
   }
 
   if (!profile || profile.status === "pendente") {
-    // Fazer logout no Supabase para não manter cookies de sessão ativos
     try {
       const supabase = await createClient();
       await supabase.auth.signOut();
@@ -163,13 +166,111 @@ export async function loginAction(formData: FormData) {
     };
   }
 
-  // Se aprovado, sucesso!
   loginAttemptsMap.delete(email);
 
   if (profile.role === "admin") {
     redirect(targetRedirect.startsWith("/admin") ? targetRedirect : "/admin");
   } else {
     redirect(targetRedirect || "/catalogo");
+  }
+}
+
+export async function solicitarRecuperacaoSenhaAction(email: string) {
+  try {
+    if (!email || !email.includes("@")) {
+      return { error: "Informe um e-mail válido." };
+    }
+    const supabase = await createClient();
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
+      redirectTo: `${siteUrl}/redefinir-senha`,
+    });
+
+    if (error) {
+      return { error: error.message || "Erro ao solicitar recuperação de senha." };
+    }
+
+    return {
+      success: true,
+      message: "Enviamos as instruções de redefinição de senha para seu e-mail.",
+    };
+  } catch (err: any) {
+    return { error: err?.message || "Erro ao solicitar recuperação de senha." };
+  }
+}
+
+export async function redefinirSenhaAction(newPassword: string) {
+  try {
+    if (!newPassword || newPassword.length < 6) {
+      return { error: "A nova senha deve ter no mínimo 6 caracteres." };
+    }
+
+    const supabase = await createClient();
+    const { error } = await supabase.auth.updateUser({
+      password: newPassword,
+    });
+
+    if (error) {
+      return { error: error.message || "Erro ao redefinir a senha." };
+    }
+
+    return {
+      success: true,
+      message: "Sua senha foi redefinida com sucesso! Você já pode fazer login.",
+    };
+  } catch (err: any) {
+    return { error: err?.message || "Erro ao redefinir a senha." };
+  }
+}
+
+export async function atualizarPerfilAction(nome: string, newPassword?: string) {
+  try {
+    const supabase = await createClient();
+    const { data: authData } = await supabase.auth.getUser();
+    const user = authData?.user;
+
+    if (!user) {
+      return { error: "Usuário não autenticado." };
+    }
+
+    if (!nome || nome.trim().length < 2) {
+      return { error: "O nome deve ter no mínimo 2 caracteres." };
+    }
+
+    const nomeTrimmed = nome.trim();
+
+    // 1. Atualizar nome no Prisma
+    await prisma.profile.updateMany({
+      where: {
+        OR: [{ id: user.id }, { email: user.email ? user.email.toLowerCase() : "" }],
+      },
+      data: { nome: nomeTrimmed },
+    });
+
+    // 2. Atualizar user_metadata no Supabase Auth
+    await supabase.auth.updateUser({
+      data: { nome: nomeTrimmed },
+    });
+
+    // 3. Atualizar senha se informada
+    if (newPassword && newPassword.trim().length > 0) {
+      if (newPassword.trim().length < 6) {
+        return { error: "A nova senha deve ter no mínimo 6 caracteres." };
+      }
+      const { error: pwdError } = await supabase.auth.updateUser({
+        password: newPassword.trim(),
+      });
+      if (pwdError) {
+        return { error: `Nome atualizado, mas ocorreu um erro ao redefinir a senha: ${pwdError.message}` };
+      }
+    }
+
+    revalidatePath("/perfil");
+    revalidatePath("/admin");
+    revalidatePath("/catalogo");
+    return { success: true, message: "Perfil atualizado com sucesso!" };
+  } catch (err: any) {
+    return { error: err?.message || "Erro ao atualizar perfil." };
   }
 }
 

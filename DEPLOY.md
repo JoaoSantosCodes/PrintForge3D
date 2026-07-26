@@ -25,6 +25,14 @@ npm run seed:admin
 ```
 *Este comando criará o usuário no Supabase Auth e atribuirá `role="admin"` e `status="aprovado"` no banco Prisma.*
 
+### Passo 1.3 — Configuração de Confirmação de E-mail no Dashboard Supabase
+No painel web do Supabase ([supabase.com/dashboard](https://supabase.com/dashboard)):
+1. Acesse **Authentication > Providers > Email**.
+2. Marque a opção **"Confirm email"** para exigir confirmação de e-mail antes de autenticar o usuário.
+3. Acesse **Authentication > URL Configuration**:
+   - `Site URL`: `https://seu-dominio.vercel.app`
+   - `Redirect URLs`: Adicione `https://seu-dominio.vercel.app/redefinir-senha` e `http://localhost:3000/redefinir-senha`.
+
 ---
 
 ## 🗄️ 2. Migração do Banco de Dados (SQLite ➡️ Supabase PostgreSQL)

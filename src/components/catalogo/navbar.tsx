@@ -55,13 +55,23 @@ export async function PublicNavbar() {
           </Link>
 
           {isLoggedIn && (
-            <Link
-              href="/pedidos"
-              className="text-xs font-semibold text-slate-300 hover:text-teal-400 transition-colors flex items-center gap-1.5"
-            >
-              <ShoppingBag className="w-3.5 h-3.5 text-teal-400" />
-              Meus Pedidos
-            </Link>
+            <>
+              <Link
+                href="/pedidos"
+                className="text-xs font-semibold text-slate-300 hover:text-teal-400 transition-colors flex items-center gap-1.5"
+              >
+                <ShoppingBag className="w-3.5 h-3.5 text-teal-400" />
+                Meus Pedidos
+              </Link>
+
+              <Link
+                href="/perfil"
+                className="text-xs font-semibold text-slate-300 hover:text-teal-400 transition-colors flex items-center gap-1.5"
+              >
+                <User className="w-3.5 h-3.5 text-teal-400" />
+                Meu Perfil
+              </Link>
+            </>
           )}
 
           {isAdmin && (
