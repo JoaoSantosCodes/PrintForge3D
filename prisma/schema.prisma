@@ -19,6 +19,15 @@ model Profile {
   pedidos     Pedido[]
 }
 
+model AuditLog {
+  id          String   @id @default(cuid())
+  adminId     String   // Profile.id de quem executou a ação
+  acao        String   // ex: "aprovou_usuario", "bloqueou_usuario", "reativou_usuario"
+  alvoId      String?  // Profile.id do usuário afetado, quando aplicável
+  detalhes    String?  // texto livre opcional
+  createdAt   DateTime @default(now())
+}
+
 model Printer {
   id                      String    @id @default(cuid())
   nome                    String

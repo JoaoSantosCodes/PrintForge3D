@@ -4,16 +4,51 @@ import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
+async function getAdminIdFromSession() {
+  try {
+    const supabase = await createClient();
+    const { data } = await supabase.auth.getUser();
+    return data.user?.id || "admin-system";
+  } catch {
+    return "admin-system";
+  }
+}
+
+async function registrarAuditLog(acao: string, alvoId?: string, detalhes?: string) {
+  try {
+    const adminId = await getAdminIdFromSession();
+    await prisma.auditLog.create({
+      data: {
+        adminId,
+        acao,
+        alvoId,
+        detalhes,
+      },
+    });
+  } catch (err) {
+    console.warn("⚠️ Falha ao gravar AuditLog:", err);
+  }
+}
+
 export async function aprovarUsuarioAction(id: string) {
   try {
-    await prisma.profile.update({
+    const targetUser = await prisma.profile.update({
       where: { id },
       data: {
         status: "aprovado",
         aprovadoEm: new Date(),
       },
     });
+
+    await registrarAuditLog(
+      "aprovou_usuario",
+      id,
+      `Aprovou o acesso do usuário ${targetUser.nome || targetUser.email} (${targetUser.email})`
+    );
+
     revalidatePath("/admin/usuarios");
+    revalidatePath("/admin/auditoria");
+    revalidatePath("/admin");
     return { success: true };
   } catch (err: any) {
     return { error: err?.message || "Erro ao aprovar usuário." };
@@ -30,7 +65,6 @@ export async function bloquearUsuarioAction(id: string) {
       return { error: "Você não pode bloquear seu próprio usuário administrador." };
     }
 
-    // Buscar perfil para verificar e-mail do admin atual se ID for diferente
     const currentAdminProfile = currentUserId
       ? await prisma.profile.findUnique({ where: { id: currentUserId } })
       : null;
@@ -40,13 +74,22 @@ export async function bloquearUsuarioAction(id: string) {
       return { error: "Você não pode bloquear seu próprio usuário administrador." };
     }
 
-    await prisma.profile.update({
+    const targetUser = await prisma.profile.update({
       where: { id },
       data: {
         status: "bloqueado",
       },
     });
+
+    await registrarAuditLog(
+      "bloqueou_usuario",
+      id,
+      `Bloqueou o acesso do usuário ${targetUser.nome || targetUser.email} (${targetUser.email})`
+    );
+
     revalidatePath("/admin/usuarios");
+    revalidatePath("/admin/auditoria");
+    revalidatePath("/admin");
     return { success: true };
   } catch (err: any) {
     return { error: err?.message || "Erro ao bloquear usuário." };
@@ -55,13 +98,22 @@ export async function bloquearUsuarioAction(id: string) {
 
 export async function reativarUsuarioAction(id: string) {
   try {
-    await prisma.profile.update({
+    const targetUser = await prisma.profile.update({
       where: { id },
       data: {
         status: "aprovado",
       },
     });
+
+    await registrarAuditLog(
+      "reativou_usuario",
+      id,
+      `Reativou o acesso do usuário ${targetUser.nome || targetUser.email} (${targetUser.email})`
+    );
+
     revalidatePath("/admin/usuarios");
+    revalidatePath("/admin/auditoria");
+    revalidatePath("/admin");
     return { success: true };
   } catch (err: any) {
     return { error: err?.message || "Erro ao reativar usuário." };

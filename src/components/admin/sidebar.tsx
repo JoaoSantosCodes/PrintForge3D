@@ -16,6 +16,7 @@ import {
   BarChart3,
   Users,
   User,
+  FileText,
 } from "lucide-react";
 import { logoutAction } from "@/app/actions/auth";
 import { getLowStockCountAction } from "@/app/actions/filaments";
@@ -53,6 +54,7 @@ export function Sidebar() {
     { label: "Peças & Custos", href: "/admin/pecas", icon: Box },
     { label: "Relatórios", href: "/admin/relatorios", icon: BarChart3 },
     { label: "Usuários", href: "/admin/usuarios", icon: Users, badge: pendingUsersCount > 0 ? `🔴 ${pendingUsersCount}` : null },
+    { label: "Auditoria", href: "/admin/auditoria", icon: FileText },
     { label: "Meu Perfil", href: "/perfil", icon: User },
   ];
 
