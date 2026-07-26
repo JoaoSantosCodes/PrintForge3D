@@ -1,16 +1,80 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
+import { z } from "zod";
 
 // In-memory rate limiting map for login attempts (5 attempts per minute)
 const loginAttemptsMap = new Map<string, { count: number; resetTime: number }>();
 
+const cadastroSchema = z.object({
+  nome: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
+  email: z.string().email("Endereço de e-mail inválido"),
+  password: z.string().min(6, "A senha deve ter no mínimo 6 caracteres"),
+});
+
+export async function cadastroAction(formData: FormData) {
+  try {
+    const rawData = {
+      nome: formData.get("nome"),
+      email: (formData.get("email") as string || "").trim().toLowerCase(),
+      password: formData.get("password"),
+    };
+
+    const v = cadastroSchema.parse(rawData);
+
+    const supabase = await createClient();
+
+    // 1. Criar usuário no Supabase Auth
+    const { data: authData, error: authError } = await supabase.auth.signUp({
+      email: v.email,
+      password: v.password,
+      options: {
+        data: { nome: v.nome },
+      },
+    });
+
+    if (authError) {
+      return { error: authError.message || "Erro ao realizar cadastro no serviço de autenticação." };
+    }
+
+    const authUserId = authData.user?.id || `user_${Date.now()}`;
+
+    // 2. Criar Profile no Prisma com role="usuario" e status="pendente"
+    await prisma.profile.upsert({
+      where: { email: v.email },
+      create: {
+        id: authUserId,
+        email: v.email,
+        nome: v.nome,
+        role: "usuario",
+        status: "pendente",
+      },
+      update: {
+        nome: v.nome,
+      },
+    });
+
+    // Desconectar sessão automática se tiver sido iniciada pelo Supabase signUp
+    await supabase.auth.signOut().catch(() => {});
+
+    return {
+      success: true,
+      message: "Seu cadastro foi enviado e aguarda aprovação de um administrador.",
+    };
+  } catch (err: any) {
+    if (err instanceof z.ZodError) {
+      return { error: err.errors.map((e) => e.message).join(", ") };
+    }
+    return { error: err?.message || "Erro ao realizar cadastro." };
+  }
+}
+
 export async function loginAction(formData: FormData) {
   const email = (formData.get("email") as string || "").trim().toLowerCase();
   const password = formData.get("password") as string;
-  const redirectTo = (formData.get("redirectTo") as string) || "/admin";
+  const targetRedirect = (formData.get("redirectTo") as string) || "";
 
   if (!email || !password) {
     return { error: "Email e senha são obrigatórios." };
@@ -28,7 +92,6 @@ export async function loginAction(formData: FormData) {
         };
       }
     } else {
-      // Reset window expired
       loginAttemptsMap.delete(email);
     }
   }
@@ -42,63 +105,78 @@ export async function loginAction(formData: FormData) {
     }
   };
 
-  // 2. DEMO MODE Gate Check
-  const isDemoModeEnabled = process.env.DEMO_MODE === "true";
-
-  const isDemoUser =
-    (email === "admin@printforge3d.com" ||
-      email === "admin@printforge.com" ||
-      email === "admin") &&
-    (password === "admin123" || password === "admin");
-
-  if (isDemoUser) {
-    if (!isDemoModeEnabled) {
-      recordFailedAttempt();
-      return {
-        error: "O Modo Demo de autenticação está desativado neste ambiente (DEMO_MODE !== true). Use a autenticação oficial.",
-      };
-    }
-
-    // Success in Demo Mode
-    loginAttemptsMap.delete(email);
-    const cookieStore = cookies();
-    cookieStore.set("printforge_dev_admin", "true", { path: "/" });
-    redirect(redirectTo);
-  }
-
-  // 3. Real Supabase Auth Flow
-  let supabaseSuccess = false;
+  // 2. Autenticação via Supabase Auth
+  let authUser: any = null;
   try {
     const supabase = await createClient();
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
-    if (error) {
+    if (authError) {
       recordFailedAttempt();
-      return { error: error.message || "Falha na autenticação. Verifique suas credenciais." };
+      return { error: authError.message || "Falha na autenticação. Verifique suas credenciais." };
     }
-    supabaseSuccess = true;
+    authUser = authData.user;
   } catch (err: any) {
     recordFailedAttempt();
     return { error: "Erro ao conectar com servidor de autenticação." };
   }
 
-  if (supabaseSuccess) {
-    loginAttemptsMap.delete(email);
-    redirect(redirectTo);
+  // 3. Verificação do Profile no Prisma
+  let profile = await prisma.profile.findUnique({
+    where: { email },
+  });
+
+  if (!profile && authUser) {
+    // Se o usuário existe no Supabase Auth mas ainda não tem perfil no Prisma
+    profile = await prisma.profile.create({
+      data: {
+        id: authUser.id,
+        email: authUser.email || email,
+        nome: authUser.user_metadata?.nome || email.split("@")[0],
+        role: "usuario",
+        status: "pendente",
+      },
+    });
+  }
+
+  if (!profile || profile.status === "pendente") {
+    // Fazer logout no Supabase para não manter cookies de sessão ativos
+    try {
+      const supabase = await createClient();
+      await supabase.auth.signOut();
+    } catch {}
+    return {
+      error: "Sua conta ainda está aguardando aprovação de um administrador.",
+    };
+  }
+
+  if (profile.status === "bloqueado") {
+    try {
+      const supabase = await createClient();
+      await supabase.auth.signOut();
+    } catch {}
+    return {
+      error: "Sua conta foi bloqueada. Entre em contato com o administrador.",
+    };
+  }
+
+  // Se aprovado, sucesso!
+  loginAttemptsMap.delete(email);
+
+  if (profile.role === "admin") {
+    redirect(targetRedirect.startsWith("/admin") ? targetRedirect : "/admin");
+  } else {
+    redirect(targetRedirect || "/catalogo");
   }
 }
 
-
 export async function logoutAction() {
-  const cookieStore = cookies();
-  cookieStore.delete("printforge_dev_admin");
   try {
     const supabase = await createClient();
     await supabase.auth.signOut();
   } catch {}
   redirect("/login");
 }
-

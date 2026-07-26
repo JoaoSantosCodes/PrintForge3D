@@ -51,19 +51,27 @@ export async function updateSession(request: NextRequest) {
     }
   }
 
-  const isDevAdmin = request.cookies.get("printforge_dev_admin")?.value === "true";
+  const pathname = request.nextUrl.pathname;
 
-  // Protect /admin routes
-  if (request.nextUrl.pathname.startsWith("/admin")) {
-    if (!user && !isDevAdmin) {
+  // Protect /admin routes (Requires authenticated session)
+  if (pathname.startsWith("/admin")) {
+    if (!user) {
       const url = request.nextUrl.clone();
       url.pathname = "/login";
-      url.searchParams.set("redirectTo", request.nextUrl.pathname);
+      url.searchParams.set("redirectTo", pathname);
+      return NextResponse.redirect(url);
+    }
+  }
+
+  // Protect /pedidos routes (Requires authenticated session)
+  if (pathname.startsWith("/pedidos")) {
+    if (!user) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/login";
+      url.searchParams.set("redirectTo", pathname);
       return NextResponse.redirect(url);
     }
   }
 
   return response;
 }
-
-

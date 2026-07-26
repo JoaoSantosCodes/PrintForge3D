@@ -1,18 +1,29 @@
-# 🚀 Checklist de Deploy & Pré-Produção — PrintForge 3D
+# 🚀 Checklist de Deploy & Produção — PrintForge 3D
 
-Este documento contém o guia completo de pré-produção, migração de banco de dados e passos de deploy para colocar o **PrintForge 3D** em produção (Vercel + Supabase).
+Este documento contém o guia completo de pré-produção, migração de banco de dados, inicialização de administrador e deploy no **Vercel + Supabase**.
 
 ---
 
-## 🔒 1. Trava de Segurança: Desativar Modo Demo
+## 🔑 1. Autenticação Real & Criação do Administrador Inicial
 
-Em ambiente local de desenvolvimento, o sistema permite utilizar as credenciais demo (`admin@printforge3d.com` / `admin123`).
+O sistema utiliza o **Supabase Auth** integrado aos perfis do Prisma (`Profile`).
 
-- [ ] **No painel da Vercel / Servidor de Produção**, certifique-se de configurar:
-  ```env
-  DEMO_MODE=false
-  ```
-- [ ] **Verificação**: Tentar logar com `admin@printforge3d.com` em produção deve retornar a mensagem: *"O Modo Demo de autenticação está desativado neste ambiente."*
+### Passo 1.1 — Configurar Variáveis de Ambiente do Administrador
+Antes de rodar o deploy, defina no seu arquivo `.env` ou no painel da Vercel:
+```env
+ADMIN_EMAIL="admin@printforge3d.com"
+ADMIN_PASSWORD="SuaSenhaSegura123!"
+SUPABASE_SERVICE_ROLE_KEY="eyJhbGciOiJIUzI1Ni..."
+```
+
+### Passo 1.2 — Executar o Seed de Administrador
+Para promover ou criar o primeiro administrador aprovado no sistema:
+
+```bash
+# Executa o seed de administrador inicial
+npm run seed:admin
+```
+*Este comando criará o usuário no Supabase Auth e atribuirá `role="admin"` e `status="aprovado"` no banco Prisma.*
 
 ---
 
@@ -32,7 +43,7 @@ datasource db {
 ```
 
 ### Passo 2.2 — Executar a Migração
-No terminal da sua máquina local:
+No terminal:
 
 ```bash
 # 1. Gerar os arquivos de migração PostgreSQL
@@ -41,15 +52,15 @@ npx prisma migrate dev --name init_postgres
 # 2. Aplicar o schema no banco de produção
 npx prisma db push
 
-# 3. (Opcional) Popular o banco de produção com os dados iniciais
-npm run seed
+# 3. Popular dados iniciais de impressoras/filamentos e administrador
+npm run db:reset
 ```
 
 ---
 
 ## 🌐 3. Configuração de Variáveis de Ambiente na Vercel
 
-No painel do projeto na **Vercel** (`Settings > Environment Variables`), cadastre as seguintes variáveis:
+No painel do projeto na **Vercel** (`Settings > Environment Variables`), cadastre as variáveis:
 
 | Variável | Descrição / Valor |
 | :--- | :--- |
@@ -58,7 +69,8 @@ No painel do projeto na **Vercel** (`Settings > Environment Variables`), cadastr
 | `NEXT_PUBLIC_SUPABASE_URL` | URL pública da sua instância no Supabase (`https://xyz.supabase.co`) |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Chave pública `anon` do Supabase |
 | `SUPABASE_SERVICE_ROLE_KEY` | Chave secreta `service_role` (uso server-side apenas) |
-| `DEMO_MODE` | `false` (Desativa logins demo obrigatoriamente) |
+| `ADMIN_EMAIL` | E-mail do primeiro administrador do sistema |
+| `ADMIN_PASSWORD` | Senha inicial do primeiro administrador |
 
 ---
 
@@ -66,7 +78,7 @@ No painel do projeto na **Vercel** (`Settings > Environment Variables`), cadastr
 
 - [ ] Acesse o dashboard do Supabase em **Storage > Buckets**.
 - [ ] Crie um bucket público chamado **`pecas-fotos`**.
-- [ ] Configure as políticas de RLS (Read/Write) para permitir upload de imagens de peças.
+- [ ] Configure as políticas de RLS para permitir upload e visualização de imagens.
 
 ---
 
@@ -91,6 +103,6 @@ npx vercel --prod
 
 ## 🛡️ 6. Recursos de Proteção Ativos no Sistema
 
-- **Rate Limiting no Login**: Bloqueio temporário após 5 tentativas de login com erro em menos de 1 minuto por conta/IP.
-- **Validação de Formulários Zod**: Proteção contra valores negativos/nulos em peso, tempo, preços e vida útil.
-- **Sigilo Comercial no PDF**: Nenhum custo interno de filamento, energia ou mão de obra é exposto no orçamento comercial gerado para o cliente.
+- **Sistema de Aprovação de Cadastros**: Todo novo cadastro de usuário via `/cadastro` inicia como `status="pendente"` e requer aprovação de um Administrador em `/admin/usuarios`.
+- **Middleware Protegido**: Bloqueio de rotas `/admin/**` para contas não administradoras ou pendentes/bloqueadas.
+- **Rate Limiting no Login**: Bloqueio de 1 minuto após 5 tentativas de login com erro.

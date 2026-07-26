@@ -9,7 +9,8 @@
     "lint": "next lint",
     "test": "vitest run",
     "seed": "npx tsx prisma/seed.ts",
-    "db:reset": "prisma db push --force-reset && npx tsx prisma/seed.ts",
+    "seed:admin": "npx tsx prisma/seed-admin.ts",
+    "db:reset": "prisma db push --force-reset && npx tsx prisma/seed.ts && npx tsx prisma/seed-admin.ts",
     "postinstall": "prisma generate"
   },
   "prisma": {

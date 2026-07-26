@@ -7,6 +7,18 @@ datasource db {
   url      = "file:./dev.db"
 }
 
+model Profile {
+  id          String    @id // Mesmo ID do Supabase Auth (auth.users.id)
+  email       String    @unique
+  nome        String?
+  role        String    @default("usuario") // "admin" | "usuario"
+  status      String    @default("pendente") // "pendente" | "aprovado" | "bloqueado"
+  createdAt   DateTime  @default(now())
+  aprovadoEm  DateTime?
+
+  pedidos     Pedido[]
+}
+
 model Printer {
   id                      String    @id @default(cuid())
   nome                    String
@@ -75,6 +87,8 @@ model Pedido {
   status         String   @default("pendente") // pendente | em_impressao | pintando | pronto | enviado | entregue
   pecaId         String
   peca           Peca     @relation(fields: [pecaId], references: [id], onDelete: Cascade)
+  usuarioId      String?
+  usuario        Profile? @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
   quantidade     Int      @default(1)
   precoAcordado  Float?
   observacoes    String?

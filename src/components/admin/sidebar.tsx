@@ -14,6 +14,7 @@ import {
   Palette,
   ShoppingBag,
   BarChart3,
+  Users,
 } from "lucide-react";
 import { logoutAction } from "@/app/actions/auth";
 import { getLowStockCountAction } from "@/app/actions/filaments";
@@ -40,6 +41,7 @@ export function Sidebar() {
     { label: "Tintas & Pintura", href: "/admin/tintas", icon: Palette },
     { label: "Peças & Custos", href: "/admin/pecas", icon: Box },
     { label: "Relatórios", href: "/admin/relatorios", icon: BarChart3 },
+    { label: "Usuários", href: "/admin/usuarios", icon: Users },
   ];
 
   return (
