@@ -18,10 +18,12 @@ import {
 } from "lucide-react";
 import { logoutAction } from "@/app/actions/auth";
 import { getLowStockCountAction } from "@/app/actions/filaments";
+import { getPendingUsersCountAction } from "@/app/actions/usuarios";
 
 export function Sidebar() {
   const pathname = usePathname();
   const [lowStockCount, setLowStockCount] = useState(0);
+  const [pendingUsersCount, setPendingUsersCount] = useState(0);
 
   useEffect(() => {
     getLowStockCountAction().then((res) => {
@@ -29,6 +31,14 @@ export function Sidebar() {
         setLowStockCount(res.lowStockCount);
       } else {
         setLowStockCount(0);
+      }
+    });
+
+    getPendingUsersCountAction().then((res) => {
+      if (res?.count) {
+        setPendingUsersCount(res.count);
+      } else {
+        setPendingUsersCount(0);
       }
     });
   }, [pathname]);
@@ -41,7 +51,7 @@ export function Sidebar() {
     { label: "Tintas & Pintura", href: "/admin/tintas", icon: Palette },
     { label: "Peças & Custos", href: "/admin/pecas", icon: Box },
     { label: "Relatórios", href: "/admin/relatorios", icon: BarChart3 },
-    { label: "Usuários", href: "/admin/usuarios", icon: Users },
+    { label: "Usuários", href: "/admin/usuarios", icon: Users, badge: pendingUsersCount > 0 ? `🔴 ${pendingUsersCount}` : null },
   ];
 
   return (

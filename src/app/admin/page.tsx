@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { formatarMoeda, calcularCustoPeca } from "@/lib/custos";
 import { FinancialChart } from "@/components/admin/financial-chart";
-import { Box, Printer, Boxes, TrendingUp, DollarSign, Globe, Plus, Layers, Palette, ShoppingBag, Clock } from "lucide-react";
+import { Box, Printer, Boxes, TrendingUp, DollarSign, Globe, Plus, Layers, Palette, ShoppingBag, Clock, Users } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
@@ -16,6 +16,7 @@ export default async function AdminDashboardPage() {
   let pedidosPendentes = 0;
   let pedidosEmProducao = 0;
   let totalPedidos = 0;
+  let pendingProfilesCount = 0;
   let pecas: any[] = [];
   let pedidos30Dias: any[] = [];
 
@@ -23,7 +24,18 @@ export default async function AdminDashboardPage() {
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
   try {
-    const [countPecas, countPrinters, countFilaments, countTintas, countPendentes, countProducao, countPedidosTotal, fetchedPecas, fetchedPedidos] = await Promise.all([
+    const [
+      countPecas,
+      countPrinters,
+      countFilaments,
+      countTintas,
+      countPendentes,
+      countProducao,
+      countPedidosTotal,
+      countPendingProfiles,
+      fetchedPecas,
+      fetchedPedidos,
+    ] = await Promise.all([
       prisma.peca.count(),
       prisma.printer.count(),
       prisma.filament.count(),
@@ -31,6 +43,7 @@ export default async function AdminDashboardPage() {
       prisma.pedido.count({ where: { status: "pendente" } }),
       prisma.pedido.count({ where: { status: { in: ["em_impressao", "pintando"] } } }),
       prisma.pedido.count(),
+      prisma.profile.count({ where: { status: "pendente" } }),
       prisma.peca.findMany({
         include: {
           custoImpressao: true,
@@ -61,6 +74,7 @@ export default async function AdminDashboardPage() {
     pedidosPendentes = countPendentes;
     pedidosEmProducao = countProducao;
     totalPedidos = countPedidosTotal;
+    pendingProfilesCount = countPendingProfiles;
     pecas = fetchedPecas;
     pedidos30Dias = fetchedPedidos;
   } catch (err) {
@@ -172,6 +186,29 @@ export default async function AdminDashboardPage() {
           </Link>
         </div>
       </div>
+
+      {pendingProfilesCount > 0 && (
+        <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-lg shadow-amber-500/5">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold">
+              <Users className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="font-bold text-slate-100 text-sm">
+                {pendingProfilesCount} {pendingProfilesCount === 1 ? "novo usuário aguarda" : "novos usuários aguardam"} aprovação de acesso
+              </h3>
+              <p className="text-xs text-slate-400">
+                Acesse a gestão de usuários para analisar e aprovar as solicitações de cadastro.
+              </p>
+            </div>
+          </div>
+          <Link href="/admin/usuarios">
+            <Button variant="primary" size="sm">
+              Analisar Cadastros &rarr;
+            </Button>
+          </Link>
+        </div>
+      )}
 
       {/* Financial & Order Metrics Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">

@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
+import { enviarEmailMudancaStatus } from "@/lib/email";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
@@ -54,13 +55,34 @@ export async function createPedidoAction(formData: FormData) {
 
 export async function updatePedidoStatusAction(id: string, newStatus: string) {
   try {
-    await prisma.pedido.update({
+    const updatedPedido = await prisma.pedido.update({
       where: { id },
       data: { status: newStatus },
+      include: {
+        peca: { select: { nome: true } },
+        usuario: { select: { email: true, nome: true } },
+      },
     });
+
+    const targetEmail =
+      updatedPedido.usuario?.email ||
+      (updatedPedido.clienteContato && updatedPedido.clienteContato.includes("@")
+        ? updatedPedido.clienteContato
+        : null);
+
+    if (targetEmail) {
+      enviarEmailMudancaStatus({
+        toEmail: targetEmail,
+        clienteNome: updatedPedido.usuario?.nome || updatedPedido.clienteNome,
+        pecaNome: updatedPedido.peca.nome,
+        novoStatus: newStatus,
+        pedidoId: updatedPedido.id,
+      }).catch((err) => console.warn("⚠️ Error in email trigger:", err));
+    }
 
     revalidatePath("/admin/pedidos");
     revalidatePath("/admin");
+    revalidatePath("/pedidos");
     return { success: true };
   } catch (err: any) {
     return { error: err?.message || "Erro ao atualizar status do pedido." };

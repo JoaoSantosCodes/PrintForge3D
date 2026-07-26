@@ -67,3 +67,14 @@ export async function reativarUsuarioAction(id: string) {
     return { error: err?.message || "Erro ao reativar usuário." };
   }
 }
+
+export async function getPendingUsersCountAction() {
+  try {
+    const count = await prisma.profile.count({
+      where: { status: "pendente" },
+    });
+    return { count };
+  } catch (err: any) {
+    return { count: 0 };
+  }
+}
