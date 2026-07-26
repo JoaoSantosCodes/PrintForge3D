@@ -1,7 +1,33 @@
 import Link from "next/link";
-import { Box, Lock } from "lucide-react";
+import { Box, Lock, ShoppingBag, LogOut, User, Shield } from "lucide-react";
+import { createClient } from "@/lib/supabase/server";
+import { prisma } from "@/lib/prisma";
+import { logoutAction } from "@/app/actions/auth";
 
-export function PublicNavbar() {
+export async function PublicNavbar() {
+  let user = null;
+  let profile = null;
+
+  try {
+    const supabase = await createClient();
+    const { data } = await supabase.auth.getUser();
+    user = data?.user || null;
+
+    if (user) {
+      profile = await prisma.profile.findFirst({
+        where: {
+          OR: [
+            { id: user.id },
+            { email: user.email ? user.email.toLowerCase() : "" },
+          ],
+        },
+      });
+    }
+  } catch {}
+
+  const isLoggedIn = !!user && profile?.status === "aprovado";
+  const isAdmin = profile?.role === "admin";
+
   return (
     <header className="sticky top-0 z-40 bg-slate-950/80 backdrop-blur-md border-b border-slate-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
@@ -19,14 +45,67 @@ export function PublicNavbar() {
           </div>
         </Link>
 
+        {/* Navigation Menu */}
         <div className="flex items-center gap-4">
           <Link
-            href="/admin"
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-900 border border-transparent hover:border-slate-800 transition-all"
+            href="/catalogo"
+            className="text-xs font-semibold text-slate-300 hover:text-teal-400 transition-colors"
           >
-            <Lock className="w-3.5 h-3.5 text-teal-400" />
-            Área do Administrador
+            Catálogo
           </Link>
+
+          {isLoggedIn && (
+            <Link
+              href="/pedidos"
+              className="text-xs font-semibold text-slate-300 hover:text-teal-400 transition-colors flex items-center gap-1.5"
+            >
+              <ShoppingBag className="w-3.5 h-3.5 text-teal-400" />
+              Meus Pedidos
+            </Link>
+          )}
+
+          {isAdmin && (
+            <Link
+              href="/admin"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-teal-300 bg-teal-500/10 border border-teal-500/20 hover:bg-teal-500/20 transition-all"
+            >
+              <Shield className="w-3.5 h-3.5 text-teal-400" />
+              Painel Admin
+            </Link>
+          )}
+
+          {isLoggedIn ? (
+            <div className="flex items-center gap-3 pl-2 border-l border-slate-800">
+              <span className="text-xs font-medium text-slate-400 hidden sm:inline-block">
+                Olá, <strong className="text-slate-200">{profile?.nome || profile?.email?.split("@")[0]}</strong>
+              </span>
+
+              <form action={logoutAction}>
+                <button
+                  type="submit"
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-rose-400 hover:bg-rose-500/10 rounded-xl transition-all"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  Sair
+                </button>
+              </form>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 pl-2 border-l border-slate-800">
+              <Link
+                href="/login"
+                className="px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-300 hover:text-slate-100 hover:bg-slate-900 transition-all"
+              >
+                Entrar
+              </Link>
+              <Link
+                href="/cadastro"
+                className="px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-950 bg-teal-400 hover:bg-teal-300 transition-all shadow-md shadow-teal-400/10"
+              >
+                Criar Conta
+              </Link>
+            </div>
+          )}
         </div>
       </div>
     </header>

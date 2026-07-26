@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
@@ -114,5 +115,55 @@ export async function deletePedidoAction(id: string) {
     return { success: true };
   } catch (err: any) {
     return { error: err?.message || "Erro ao excluir pedido." };
+  }
+}
+
+export async function criarPedidoClienteAction(pecaId: string, quantidade: number, observacoes?: string) {
+  try {
+    const supabase = await createClient();
+    const { data: authData } = await supabase.auth.getUser();
+    const user = authData?.user;
+
+    if (!user) {
+      return { error: "Você precisa estar logado para fazer um pedido." };
+    }
+
+    const profile = await prisma.profile.findFirst({
+      where: {
+        OR: [
+          { id: user.id },
+          { email: user.email ? user.email.toLowerCase() : "" },
+        ],
+      },
+    });
+
+    if (!profile || profile.status !== "aprovado") {
+      return { error: "Sua conta precisa estar aprovada por um administrador para realizar pedidos." };
+    }
+
+    const peca = await prisma.peca.findUnique({ where: { id: pecaId } });
+    if (!peca) {
+      return { error: "Peça não encontrada." };
+    }
+
+    const novoPedido = await prisma.pedido.create({
+      data: {
+        clienteNome: profile.nome || profile.email,
+        clienteContato: profile.email,
+        usuarioId: profile.id,
+        pecaId: peca.id,
+        quantidade: Math.max(1, quantidade || 1),
+        observacoes: observacoes || null,
+        status: "pendente",
+      },
+    });
+
+    revalidatePath("/pedidos");
+    revalidatePath("/admin/pedidos");
+    revalidatePath("/admin");
+
+    return { success: true, pedidoId: novoPedido.id };
+  } catch (err: any) {
+    return { error: err?.message || "Erro ao solicitar pedido." };
   }
 }
