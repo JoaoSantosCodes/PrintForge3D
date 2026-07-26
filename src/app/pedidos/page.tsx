@@ -18,7 +18,6 @@ export default async function PedidosUsuarioPage() {
     redirect("/login?redirectTo=/pedidos");
   }
 
-  // Fetch profile to verify approved status
   const profile = await prisma.profile.findFirst({
     where: {
       OR: [
@@ -32,7 +31,6 @@ export default async function PedidosUsuarioPage() {
     redirect("/login?error=Sua conta precisa estar aprovada por um administrador para visualizar seus pedidos.");
   }
 
-  // STRICT SESSION ISOLATION: Filter ONLY by profile.id / user.id
   const pedidos = await prisma.pedido.findMany({
     where: {
       OR: [
@@ -52,7 +50,13 @@ export default async function PedidosUsuarioPage() {
           nome: true,
           fotoUrl: true,
           categoria: true,
-          // CRITICAL SECURITY RULE: Absolutely NO internal cost, printer, filament or price fields selected!
+        },
+      },
+      avaliacao: {
+        select: {
+          id: true,
+          nota: true,
+          comentario: true,
         },
       },
     },
@@ -66,6 +70,7 @@ export default async function PedidosUsuarioPage() {
     observacoes: p.observacoes,
     createdAt: p.createdAt.toISOString(),
     peca: p.peca,
+    avaliacao: p.avaliacao,
   }));
 
   return (

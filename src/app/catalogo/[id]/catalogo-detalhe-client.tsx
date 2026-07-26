@@ -13,11 +13,20 @@ import {
   Minus,
   MessageSquare,
   Sparkles,
+  Star,
+  UserCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Modal } from "@/components/ui/modal";
 import { criarPedidoClienteAction } from "@/app/actions/pedidos";
+
+interface AvaliacaoItem {
+  id: string;
+  nota: number;
+  comentario: string | null;
+  createdAt: string;
+}
 
 interface CatalogoDetalheClientProps {
   peca: {
@@ -33,12 +42,14 @@ interface CatalogoDetalheClientProps {
     nome: string | null;
     email: string;
   } | null;
+  avaliacoes?: AvaliacaoItem[];
 }
 
 export function CatalogoDetalheClient({
   peca,
   isLoggedIn,
   userProfile,
+  avaliacoes = [],
 }: CatalogoDetalheClientProps) {
   const router = useRouter();
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
@@ -47,6 +58,12 @@ export function CatalogoDetalheClient({
   const [submitting, setSubmitting] = useState(false);
   const [orderSuccessId, setOrderSuccessId] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const totalAvaliacoes = avaliacoes.length;
+  const mediaNotas =
+    totalAvaliacoes > 0
+      ? (avaliacoes.reduce((acc, curr) => acc + curr.nota, 0) / totalAvaliacoes).toFixed(1)
+      : null;
 
   const handleOrderButtonClick = () => {
     if (!isLoggedIn) {
@@ -103,11 +120,18 @@ export function CatalogoDetalheClient({
         {/* Right: Content details */}
         <div className="p-8 sm:p-10 flex flex-col justify-between space-y-6">
           <div className="space-y-4">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               {peca.categoria && <Badge variant="info">{peca.categoria}</Badge>}
               <Badge variant="success" className="flex items-center gap-1">
                 <CheckCircle2 className="w-3 h-3" /> Modelo Verificado 3D
               </Badge>
+
+              {mediaNotas && (
+                <div className="px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-amber-500/10 border border-amber-500/30 text-amber-300 flex items-center gap-1">
+                  <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                  <span>{mediaNotas} / 5.0 ({totalAvaliacoes} avaliações)</span>
+                </div>
+              )}
             </div>
 
             <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-100 tracking-tight leading-tight">
@@ -170,6 +194,64 @@ export function CatalogoDetalheClient({
           </div>
         </div>
       </div>
+
+      {/* Customer Reviews Social Proof Section */}
+      {avaliacoes.length > 0 && (
+        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-8 space-y-6 shadow-xl">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+            <div>
+              <h2 className="text-xl font-bold text-slate-100 flex items-center gap-2">
+                <Star className="w-5 h-5 text-amber-400 fill-amber-400" /> Avaliações de Clientes
+              </h2>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Opiniões de quem encomendou e recebeu este modelo 3D.
+              </p>
+            </div>
+            {mediaNotas && (
+              <div className="text-right">
+                <span className="text-2xl font-extrabold text-amber-400">{mediaNotas}</span>
+                <span className="text-xs text-slate-400 font-medium"> / 5.0</span>
+              </div>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {avaliacoes.map((av) => (
+              <div
+                key={av.id}
+                className="bg-slate-950 border border-slate-800 rounded-2xl p-4 space-y-2.5"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <Star
+                        key={star}
+                        className={`w-4 h-4 ${
+                          star <= av.nota
+                            ? "text-amber-400 fill-amber-400"
+                            : "text-slate-700"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <span className="text-[10px] text-slate-500 font-mono">
+                    {new Date(av.createdAt).toLocaleDateString("pt-BR")}
+                  </span>
+                </div>
+
+                {av.comentario && (
+                  <p className="text-xs text-slate-300 italic leading-relaxed">
+                    &ldquo;{av.comentario}&rdquo;
+                  </p>
+                )}
+                <div className="text-[10px] font-semibold text-teal-400 flex items-center gap-1 pt-1">
+                  <UserCheck className="w-3 h-3" /> Compra Verificada no PrintForge 3D
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Order Modal for Logged In Client */}
       <Modal

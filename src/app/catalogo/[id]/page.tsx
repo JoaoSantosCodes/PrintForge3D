@@ -27,6 +27,30 @@ export default async function CatalogoDetalhePage({ params }: { params: { id: st
     notFound();
   }
 
+  // Fetch public reviews for this piece (Strictly NO sensitive user data)
+  const avaliacoes = await prisma.avaliacao.findMany({
+    where: {
+      pedido: {
+        pecaId: peca.id,
+      },
+    },
+    select: {
+      id: true,
+      nota: true,
+      comentario: true,
+      createdAt: true,
+    },
+    orderBy: { createdAt: "desc" },
+    take: 10,
+  });
+
+  const formattedAvaliacoes = avaliacoes.map((a) => ({
+    id: a.id,
+    nota: a.nota,
+    comentario: a.comentario,
+    createdAt: a.createdAt.toISOString(),
+  }));
+
   let userProfile: { nome: string | null; email: string } | null = null;
   let isLoggedIn = false;
 
@@ -60,6 +84,7 @@ export default async function CatalogoDetalhePage({ params }: { params: { id: st
       peca={peca}
       isLoggedIn={isLoggedIn}
       userProfile={userProfile}
+      avaliacoes={formattedAvaliacoes}
     />
   );
 }

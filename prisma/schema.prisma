@@ -90,19 +90,30 @@ model Peca {
 }
 
 model Pedido {
-  id             String   @id @default(cuid())
+  id             String     @id @default(cuid())
   clienteNome    String
-  clienteContato String?  // telefone/whatsapp
-  status         String   @default("pendente") // pendente | em_impressao | pintando | pronto | enviado | entregue
+  clienteContato String?    // telefone/whatsapp
+  status         String     @default("pendente") // pendente | em_impressao | pintando | pronto | enviado | entregue | cancelado
   pecaId         String
-  peca           Peca     @relation(fields: [pecaId], references: [id], onDelete: Cascade)
+  peca           Peca       @relation(fields: [pecaId], references: [id], onDelete: Cascade)
   usuarioId      String?
-  usuario        Profile? @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
-  quantidade     Int      @default(1)
+  usuario        Profile?   @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
+  quantidade     Int        @default(1)
   precoAcordado  Float?
   observacoes    String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  avaliacao      Avaliacao?
+}
+
+model Avaliacao {
+  id          String   @id @default(cuid())
+  pedidoId    String   @unique
+  pedido      Pedido   @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+  nota        Int      // 1 a 5
+  comentario  String?
+  createdAt   DateTime @default(now())
 }
 
 model CustoImpressao {

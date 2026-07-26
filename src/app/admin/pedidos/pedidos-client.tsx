@@ -36,6 +36,7 @@ import {
   Sparkles,
   Download,
   MessageCircle,
+  XCircle,
 } from "lucide-react";
 
 interface Peca {
@@ -67,6 +68,7 @@ const STATUS_COLUMNS = [
   { id: "pronto", label: "Pronto", color: "border-emerald-500/30 bg-emerald-950/20 text-emerald-400", badge: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20", icon: CheckCircle2 },
   { id: "enviado", label: "Enviado", color: "border-indigo-500/30 bg-indigo-950/20 text-indigo-400", badge: "bg-indigo-500/10 text-indigo-400 border-indigo-500/20", icon: Truck },
   { id: "entregue", label: "Entregue", color: "border-teal-500/30 bg-teal-950/20 text-teal-400", badge: "bg-teal-500/10 text-teal-400 border-teal-500/20", icon: Sparkles },
+  { id: "cancelado", label: "Cancelados", color: "border-rose-500/30 bg-rose-950/20 text-rose-400", badge: "bg-rose-500/10 text-rose-400 border-rose-500/20", icon: XCircle },
 ];
 
 export default function PedidosClientPage({

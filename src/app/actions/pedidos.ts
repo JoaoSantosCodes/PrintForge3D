@@ -189,3 +189,89 @@ export async function criarPedidoClienteAction(pecaId: string, quantidade: numbe
     return { error: err?.message || "Erro ao solicitar pedido." };
   }
 }
+
+export async function cancelarPedidoClienteAction(pedidoId: string) {
+  try {
+    const supabase = await createClient();
+    const { data: authData } = await supabase.auth.getUser();
+    const user = authData?.user;
+
+    if (!user) {
+      return { error: "Você precisa estar logado para cancelar um pedido." };
+    }
+
+    const pedido = await prisma.pedido.findUnique({
+      where: { id: pedidoId },
+    });
+
+    if (!pedido) {
+      return { error: "Pedido não encontrado." };
+    }
+
+    if (pedido.status !== "pendente") {
+      return { error: "Este pedido já entrou em produção e não pode mais ser cancelado." };
+    }
+
+    await prisma.pedido.update({
+      where: { id: pedidoId },
+      data: { status: "cancelado" },
+    });
+
+    revalidatePath("/pedidos");
+    revalidatePath("/admin/pedidos");
+    revalidatePath("/admin");
+
+    return { success: true, message: "Pedido cancelado com sucesso." };
+  } catch (err: any) {
+    return { error: err?.message || "Erro ao cancelar pedido." };
+  }
+}
+
+export async function avaliarPedidoAction(pedidoId: string, nota: number, comentario?: string) {
+  try {
+    const supabase = await createClient();
+    const { data: authData } = await supabase.auth.getUser();
+    const user = authData?.user;
+
+    if (!user) {
+      return { error: "Você precisa estar logado para avaliar." };
+    }
+
+    if (!nota || nota < 1 || nota > 5) {
+      return { error: "Selecione uma nota de 1 a 5 estrelas." };
+    }
+
+    const pedido = await prisma.pedido.findUnique({
+      where: { id: pedidoId },
+      include: { avaliacao: true },
+    });
+
+    if (!pedido) {
+      return { error: "Pedido não encontrado." };
+    }
+
+    if (pedido.status !== "entregue") {
+      return { error: "Você só pode avaliar pedidos que já foram entregues." };
+    }
+
+    if (pedido.avaliacao) {
+      return { error: "Este pedido já foi avaliado anteriormente." };
+    }
+
+    await prisma.avaliacao.create({
+      data: {
+        pedidoId: pedido.id,
+        nota: Math.round(nota),
+        comentario: comentario ? comentario.trim() : null,
+      },
+    });
+
+    revalidatePath("/pedidos");
+    revalidatePath(`/catalogo/${pedido.pecaId}`);
+    revalidatePath("/catalogo");
+
+    return { success: true, message: "Obrigado por sua avaliação!" };
+  } catch (err: any) {
+    return { error: err?.message || "Erro ao enviar avaliação." };
+  }
+}
