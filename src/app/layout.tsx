@@ -1,11 +1,14 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
+
+export const viewport: Viewport = {
+  themeColor: "#0d9488",
+};
 
 export const metadata: Metadata = {
   title: "PrintForge 3D — Gestão de Custos & Catálogo 3D",
   description: "Sistema inteligente para cálculo de custos de impressão 3D, pintura e embalagem e vitrine pública de catálogo.",
   manifest: "/manifest.json",
-  themeColor: "#0d9488",
   appleWebApp: {
     capable: true,
     title: "PrintForge 3D",
