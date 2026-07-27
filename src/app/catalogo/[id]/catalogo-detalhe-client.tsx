@@ -103,9 +103,9 @@ export function CatalogoDetalheClient({
       </div>
 
       {/* Main Detail Grid */}
-      <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl grid grid-cols-1 md:grid-cols-2">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden shadow-xl dark:shadow-2xl grid grid-cols-1 md:grid-cols-2 transition-colors">
         {/* Left: Large Photo */}
-        <div className="relative min-h-[350px] sm:min-h-[450px] bg-slate-950 flex items-center justify-center p-4 border-b md:border-b-0 md:border-r border-slate-800">
+        <div className="relative min-h-[300px] sm:min-h-[450px] bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-4 border-b md:border-b-0 md:border-r border-slate-200 dark:border-slate-800">
           {peca.fotoUrl ? (
             <img
               src={peca.fotoUrl}
@@ -114,14 +114,14 @@ export function CatalogoDetalheClient({
             />
           ) : (
             <div className="text-center p-8">
-              <Box className="w-20 h-20 text-slate-700 mx-auto mb-4" />
+              <Box className="w-20 h-20 text-slate-400 dark:text-slate-700 mx-auto mb-4" />
               <span className="text-sm text-slate-500 font-medium">Foto não disponível</span>
             </div>
           )}
         </div>
 
         {/* Right: Content details */}
-        <div className="p-8 sm:p-10 flex flex-col justify-between space-y-6">
+        <div className="p-6 sm:p-10 flex flex-col justify-between space-y-6">
           <div className="space-y-4">
             <div className="flex items-center gap-2 flex-wrap">
               {peca.categoria && <Badge variant="info">{peca.categoria}</Badge>}
@@ -130,35 +130,35 @@ export function CatalogoDetalheClient({
               </Badge>
 
               {mediaNotas && (
-                <div className="px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-amber-500/10 border border-amber-500/30 text-amber-300 flex items-center gap-1">
+                <div className="px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-300 flex items-center gap-1">
                   <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
                   <span>{mediaNotas} / 5.0 ({totalAvaliacoes} avaliações)</span>
                 </div>
               )}
             </div>
 
-            <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-100 tracking-tight leading-tight">
+            <h1 className="text-2xl sm:text-4xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight leading-tight">
               {peca.nome}
             </h1>
 
-            <div className="pt-4 border-t border-slate-800/80">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
+            <div className="pt-4 border-t border-slate-200 dark:border-slate-800/80">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
                 Descrição do Modelo:
               </h3>
-              <p className="text-slate-300 text-sm leading-relaxed whitespace-pre-line">
+              <p className="text-slate-700 dark:text-slate-300 text-sm leading-relaxed whitespace-pre-line">
                 {peca.descricao || "Esta peça não possui descrição adicional detalhada."}
               </p>
             </div>
           </div>
 
           {/* Action Order Section */}
-          <div className="pt-6 border-t border-slate-800/80 space-y-4">
+          <div className="pt-6 border-t border-slate-200 dark:border-slate-800/80 space-y-4">
             {orderSuccessId ? (
               <div className="p-5 bg-teal-500/10 border border-teal-500/30 rounded-2xl space-y-3">
-                <div className="flex items-center gap-2 text-teal-300 font-bold text-sm">
-                  <CheckCircle2 className="w-5 h-5 text-teal-400" /> Pedido Solicitado com Sucesso!
+                <div className="flex items-center gap-2 text-teal-600 dark:text-teal-300 font-bold text-sm">
+                  <CheckCircle2 className="w-5 h-5 text-teal-500 dark:text-teal-400" /> Pedido Solicitado com Sucesso!
                 </div>
-                <p className="text-xs text-slate-300">
+                <p className="text-xs text-slate-700 dark:text-slate-300">
                   Sua encomenda foi enviada para a fila de produção da PrintForge 3D.
                 </p>
                 <Link href="/pedidos" className="block pt-1">
@@ -185,11 +185,11 @@ export function CatalogoDetalheClient({
               </>
             )}
 
-            <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 flex items-center gap-3">
-              <ShieldCheck className="w-6 h-6 text-teal-400 flex-shrink-0" />
+            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 flex items-center gap-3">
+              <ShieldCheck className="w-6 h-6 text-teal-500 dark:text-teal-400 shrink-0" />
               <div className="text-xs">
-                <p className="font-semibold text-slate-200">Garantia de Qualidade PrintForge 3D</p>
-                <p className="text-slate-400 mt-0.5">
+                <p className="font-semibold text-slate-900 dark:text-slate-200">Garantia de Qualidade PrintForge 3D</p>
+                <p className="text-slate-500 dark:text-slate-400 mt-0.5">
                   Produzido sob demanda com inspeção de acabamento e suporte direto ao cliente.
                 </p>
               </div>
@@ -200,20 +200,20 @@ export function CatalogoDetalheClient({
 
       {/* Customer Reviews Social Proof Section */}
       {avaliacoes.length > 0 && (
-        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-8 space-y-6 shadow-xl">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-xl transition-colors">
+          <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4">
             <div>
-              <h2 className="text-xl font-bold text-slate-100 flex items-center gap-2">
+              <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                 <Star className="w-5 h-5 text-amber-400 fill-amber-400" /> Avaliações de Clientes
               </h2>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                 Opiniões de quem encomendou e recebeu este modelo 3D.
               </p>
             </div>
             {mediaNotas && (
               <div className="text-right">
-                <span className="text-2xl font-extrabold text-amber-400">{mediaNotas}</span>
-                <span className="text-xs text-slate-400 font-medium"> / 5.0</span>
+                <span className="text-2xl font-extrabold text-amber-500 dark:text-amber-400">{mediaNotas}</span>
+                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium"> / 5.0</span>
               </div>
             )}
           </div>
@@ -222,7 +222,7 @@ export function CatalogoDetalheClient({
             {avaliacoes.map((av) => (
               <div
                 key={av.id}
-                className="bg-slate-950 border border-slate-800 rounded-2xl p-4 space-y-2.5"
+                className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 space-y-2.5"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1">
@@ -232,7 +232,7 @@ export function CatalogoDetalheClient({
                         className={`w-4 h-4 ${
                           star <= av.nota
                             ? "text-amber-400 fill-amber-400"
-                            : "text-slate-700"
+                            : "text-slate-300 dark:text-slate-700"
                         }`}
                       />
                     ))}
@@ -243,11 +243,11 @@ export function CatalogoDetalheClient({
                 </div>
 
                 {av.comentario && (
-                  <p className="text-xs text-slate-300 italic leading-relaxed">
+                  <p className="text-xs text-slate-700 dark:text-slate-300 italic leading-relaxed">
                     &ldquo;{av.comentario}&rdquo;
                   </p>
                 )}
-                <div className="text-[10px] font-semibold text-teal-400 flex items-center gap-1 pt-1">
+                <div className="text-[10px] font-semibold text-teal-600 dark:text-teal-400 flex items-center gap-1 pt-1">
                   <UserCheck className="w-3 h-3" /> Compra Verificada no PrintForge 3D
                 </div>
               </div>

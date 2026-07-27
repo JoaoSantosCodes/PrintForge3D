@@ -130,56 +130,56 @@ export default function TintasClientPage({
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-800 pb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-6">
         <div>
-          <h1 className="text-3xl font-extrabold text-slate-100 tracking-tight flex items-center gap-3">
-            <Palette className="w-8 h-8 text-pink-400" />
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight flex items-center gap-3">
+            <Palette className="w-7 h-7 sm:w-8 sm:h-8 text-pink-500 dark:text-pink-400" />
             Tintas & Insumos de Pintura
           </h1>
-          <p className="text-slate-400 text-sm mt-1">
+          <p className="text-slate-600 dark:text-slate-400 text-xs sm:text-sm mt-1">
             Cadastre primers, tintas acrílicas, sprays, vernizes e insumos de acabamento.
           </p>
         </div>
 
-        <Button variant="primary" onClick={() => handleOpenModal()}>
+        <Button variant="primary" onClick={() => handleOpenModal()} size="sm" className="w-full sm:w-auto">
           <Plus className="w-4 h-4" /> Nova Tinta / Insumo
         </Button>
       </div>
 
       {/* Stats cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 relative overflow-hidden">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 relative overflow-hidden shadow-md">
           <div className="absolute top-0 right-0 p-4 text-pink-500/10">
             <Palette className="w-16 h-16" />
           </div>
-          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
+          <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
             Total Cadastrado
           </p>
-          <div className="text-3xl font-extrabold text-slate-100">{totalTintas}</div>
+          <div className="text-3xl font-extrabold text-slate-900 dark:text-slate-100">{totalTintas}</div>
           <p className="text-xs text-slate-500 mt-2">Tintas, primers e acabamentos</p>
         </div>
 
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 relative overflow-hidden">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 relative overflow-hidden shadow-md">
           <div className="absolute top-0 right-0 p-4 text-cyan-500/10">
             <Droplet className="w-16 h-16" />
           </div>
-          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
+          <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
             Custo Médio por ml
           </p>
-          <div className="text-3xl font-extrabold text-pink-400">
-            {formatarMoeda(precoMedioMl)} <span className="text-xs text-slate-400 font-normal">/ ml</span>
+          <div className="text-3xl font-extrabold text-pink-600 dark:text-pink-400">
+            {formatarMoeda(precoMedioMl)} <span className="text-xs text-slate-500 dark:text-slate-400 font-normal">/ ml</span>
           </div>
           <p className="text-xs text-slate-500 mt-2">Média de custo dos materiais</p>
         </div>
 
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 relative overflow-hidden">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 relative overflow-hidden shadow-md">
           <div className="absolute top-0 right-0 p-4 text-teal-500/10">
             <PackageCheck className="w-16 h-16" />
           </div>
-          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
+          <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">
             Tipos de Material
           </p>
-          <div className="text-3xl font-extrabold text-teal-400">
+          <div className="text-3xl font-extrabold text-teal-600 dark:text-teal-400">
             {new Set(tintas.map((t) => t.tipo)).size}
           </div>
           <p className="text-xs text-slate-500 mt-2">Variedade no seu estoque</p>
@@ -187,25 +187,26 @@ export default function TintasClientPage({
       </div>
 
       {/* Filters & Search */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-slate-900/60 p-4 rounded-2xl border border-slate-800">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white dark:bg-slate-900/60 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
         <div className="relative w-full sm:w-80">
-          <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             placeholder="Buscar por nome, marca ou cor..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-pink-500"
+            className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs sm:text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-pink-500"
           />
         </div>
 
         <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
           <button
+            type="button"
             onClick={() => setSelectedTipo("todos")}
             className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
               selectedTipo === "todos"
-                ? "bg-pink-500/20 text-pink-300 border border-pink-500/30"
-                : "bg-slate-950 border border-slate-800 text-slate-400 hover:text-slate-200"
+                ? "bg-pink-500/20 text-pink-700 dark:text-pink-300 border border-pink-500/30"
+                : "bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
             }`}
           >
             Todos ({tintas.length})
@@ -215,12 +216,13 @@ export default function TintasClientPage({
             if (count === 0) return null;
             return (
               <button
+                type="button"
                 key={tipo}
                 onClick={() => setSelectedTipo(tipo)}
                 className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
                   selectedTipo === tipo
-                    ? "bg-pink-500/20 text-pink-300 border border-pink-500/30"
-                    : "bg-slate-950 border border-slate-800 text-slate-400 hover:text-slate-200"
+                    ? "bg-pink-500/20 text-pink-700 dark:text-pink-300 border border-pink-500/30"
+                    : "bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
                 }`}
               >
                 {tipo} ({count})
@@ -231,11 +233,11 @@ export default function TintasClientPage({
       </div>
 
       {/* Table / List */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-lg transition-colors">
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-sm">
+          <table className="w-full text-left border-collapse text-sm text-slate-700 dark:text-slate-300">
             <thead>
-              <tr className="bg-slate-950/80 border-b border-slate-800 text-slate-400 text-xs font-semibold uppercase tracking-wider">
+              <tr className="bg-slate-50 dark:bg-slate-950/80 border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 text-xs font-semibold uppercase tracking-wider">
                 <th className="py-4 px-6">Nome / Material</th>
                 <th className="py-4 px-6">Marca</th>
                 <th className="py-4 px-6">Tipo</th>
@@ -245,7 +247,7 @@ export default function TintasClientPage({
                 <th className="py-4 px-6 text-right">Ações</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60">
+            <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
               {filteredTintas.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="py-12 text-center text-slate-500 text-sm">

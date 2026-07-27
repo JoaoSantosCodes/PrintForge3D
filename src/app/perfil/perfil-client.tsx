@@ -52,136 +52,136 @@ export function PerfilClient({ profile }: PerfilClientProps) {
   const isAdmin = profile.role === "admin";
 
   return (
-    <div className="max-w-3xl mx-auto space-y-8 animate-in fade-in duration-300 py-6">
+    <div className="max-w-3xl mx-auto space-y-8 animate-in fade-in duration-300 py-4 sm:py-6">
       {/* Top Header */}
-      <div className="border-b border-slate-800 pb-6 flex items-center justify-between">
+      <div className="border-b border-slate-200 dark:border-slate-800 pb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-slate-100 tracking-tight flex items-center gap-3">
-            <User className="w-8 h-8 text-teal-400" /> Meu Perfil
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight flex items-center gap-3">
+            <User className="w-7 h-7 sm:w-8 sm:h-8 text-teal-500 dark:text-teal-400" /> Meu Perfil
           </h1>
-          <p className="text-slate-400 text-sm mt-1">
+          <p className="text-slate-600 dark:text-slate-400 text-xs sm:text-sm mt-1">
             Gerencie seus dados pessoais, informações da conta e senha de acesso.
           </p>
         </div>
 
-        <Badge variant={isAdmin ? "success" : "secondary"}>
+        <Badge variant={isAdmin ? "success" : "secondary"} className="self-start sm:self-auto">
           <ShieldCheck className="w-3.5 h-3.5 mr-1" />
           {isAdmin ? "Perfil Administrador" : "Perfil Usuário"}
         </Badge>
       </div>
 
       {/* Main Profile Form Card */}
-      <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-10 shadow-2xl space-y-6">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-10 shadow-xl dark:shadow-2xl space-y-6 transition-colors">
         {successMsg && (
-          <div className="p-4 bg-teal-500/10 border border-teal-500/20 rounded-2xl text-teal-300 text-xs font-semibold flex items-center gap-2">
-            <CheckCircle2 className="w-5 h-5 text-teal-400 shrink-0" />
+          <div className="p-4 bg-teal-500/10 border border-teal-500/20 rounded-2xl text-teal-700 dark:text-teal-300 text-xs font-semibold flex items-center gap-2">
+            <CheckCircle2 className="w-5 h-5 text-teal-500 dark:text-teal-400 shrink-0" />
             <span>{successMsg}</span>
           </div>
         )}
 
         {errorMsg && (
-          <div className="p-4 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-rose-400 text-xs font-semibold flex items-center gap-2">
-            <ShieldAlert className="w-5 h-5 text-rose-400 shrink-0" />
+          <div className="p-4 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-rose-700 dark:text-rose-400 text-xs font-semibold flex items-center gap-2">
+            <ShieldAlert className="w-5 h-5 text-rose-500 dark:text-rose-400 shrink-0" />
             <span>{errorMsg}</span>
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Readonly E-mail info */}
-          <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-1">
+          <div className="p-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl space-y-1">
             <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">
               Endereço de E-mail (Identificador):
             </span>
-            <p className="text-sm font-bold text-slate-200 flex items-center gap-2">
-              <Mail className="w-4 h-4 text-teal-400" /> {profile.email}
+            <p className="text-sm font-bold text-slate-900 dark:text-slate-200 flex items-center gap-2">
+              <Mail className="w-4 h-4 text-teal-500 dark:text-teal-400" /> {profile.email}
             </p>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
               Seu Nome Completo *
             </label>
             <div className="relative">
-              <User className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <User className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 required
                 value={nome}
                 onChange={(e) => setNome(e.target.value)}
                 placeholder="Seu Nome"
-                className="w-full pl-10 pr-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:border-teal-500 transition-colors"
+                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-teal-500 transition-colors"
               />
             </div>
           </div>
 
           {/* Change Password Section */}
-          <div className="pt-6 border-t border-slate-800/80 space-y-4">
-            <div className="flex items-center gap-2 text-sm font-bold text-slate-200">
-              <KeyRound className="w-4 h-4 text-teal-400" /> Alterar Senha de Acesso (Opcional)
+          <div className="pt-6 border-t border-slate-200 dark:border-slate-800/80 space-y-4">
+            <div className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-slate-200">
+              <KeyRound className="w-4 h-4 text-teal-500 dark:text-teal-400" /> Alterar Senha de Acesso (Opcional)
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-400 mb-1.5">
+                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">
                   Nova Senha
                 </label>
                 <div className="relative">
-                  <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <Lock className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
                   <input
                     type="password"
                     minLength={6}
                     value={novaSenha}
                     onChange={(e) => setNovaSenha(e.target.value)}
                     placeholder="Mínimo 6 caracteres"
-                    className="w-full pl-10 pr-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:border-teal-500 transition-colors"
+                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-teal-500 transition-colors"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-400 mb-1.5">
+                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">
                   Confirme a Nova Senha
                 </label>
                 <div className="relative">
-                  <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <Lock className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
                   <input
                     type="password"
                     minLength={6}
                     value={confirmarSenha}
                     onChange={(e) => setConfirmarSenha(e.target.value)}
                     placeholder="Repita a nova senha"
-                    className="w-full pl-10 pr-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:border-teal-500 transition-colors"
+                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-teal-500 transition-colors"
                   />
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="pt-4 border-t border-slate-800/80 flex items-center justify-end">
-            <Button variant="primary" type="submit" disabled={loading} className="px-6 py-2.5">
+          <div className="pt-4 border-t border-slate-200 dark:border-slate-800/80 flex items-center justify-end">
+            <Button variant="primary" type="submit" disabled={loading} className="px-6 py-2.5 w-full sm:w-auto">
               <Save className="w-4 h-4" /> {loading ? "Salvando Alterações..." : "Salvar Perfil"}
             </Button>
           </div>
         </form>
 
         {/* Section LGPD - Meus Dados */}
-        <div className="pt-8 border-t border-slate-800 space-y-4">
+        <div className="pt-8 border-t border-slate-200 dark:border-slate-800 space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-base font-bold text-slate-100 flex items-center gap-2">
-                <ShieldCheck className="w-5 h-5 text-teal-400" /> Meus Dados & Privacidade (LGPD)
+              <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <ShieldCheck className="w-5 h-5 text-teal-500 dark:text-teal-400" /> Meus Dados & Privacidade (LGPD)
               </h2>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                 Exerça seus direitos de titular de dados pessoais segundo a Lei Geral de Proteção de Dados.
               </p>
             </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-            <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-3">
+            <div className="p-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl space-y-3">
               <div className="space-y-1">
-                <h3 className="text-xs font-bold text-slate-200">Exportar Meus Dados</h3>
-                <p className="text-[11px] text-slate-400">
+                <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200">Exportar Meus Dados</h3>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">
                   Baixe uma cópia completa dos seus dados cadastrais e histórico de pedidos em formato JSON.
                 </p>
               </div>
@@ -209,10 +209,10 @@ export function PerfilClient({ profile }: PerfilClientProps) {
               </Button>
             </div>
 
-            <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-3">
+            <div className="p-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl space-y-3">
               <div className="space-y-1">
-                <h3 className="text-xs font-bold text-rose-400">Solicitar Exclusão da Conta</h3>
-                <p className="text-[11px] text-slate-400">
+                <h3 className="text-xs font-bold text-rose-600 dark:text-rose-400">Solicitar Exclusão da Conta</h3>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">
                   Envie uma solicitação para exclusão do seu cadastro e dados após a finalização de pedidos.
                 </p>
               </div>

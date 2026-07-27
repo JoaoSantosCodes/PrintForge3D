@@ -11,7 +11,7 @@ import {
   Legend,
 } from "recharts";
 import { formatarMoeda } from "@/lib/custos";
-import { TrendingUp, DollarSign, Activity } from "lucide-react";
+import { Activity } from "lucide-react";
 
 interface DailyFinancialData {
   data: string; // "DD/MM"
@@ -23,28 +23,27 @@ interface DailyFinancialData {
 export function FinancialChart({ data }: { data: DailyFinancialData[] }) {
   const totalReceita = data.reduce((acc, d) => acc + d.receita, 0);
   const totalCusto = data.reduce((acc, d) => acc + d.custo, 0);
-  const totalLucro = totalReceita - totalCusto;
 
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-xl">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-800 pb-4">
+    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-xl transition-colors">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4">
         <div>
-          <h2 className="text-xl font-bold text-slate-100 flex items-center gap-2.5">
-            <Activity className="w-5 h-5 text-teal-400" /> Desempenho Financeiro (Últimos 30 Dias)
+          <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2.5">
+            <Activity className="w-5 h-5 text-teal-500 dark:text-teal-400" /> Desempenho Financeiro (Últimos 30 Dias)
           </h2>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
             Comparativo diário entre Receita de Pedidos e Custos Estimados de Produção.
           </p>
         </div>
 
-        <div className="flex items-center gap-4 text-xs">
+        <div className="flex flex-wrap items-center gap-4 text-xs">
           <div className="flex items-center gap-2">
-            <span className="w-3 h-3 rounded-full bg-teal-400 inline-block" />
-            <span className="text-slate-300 font-semibold">Receita Total: <strong className="text-teal-400">{formatarMoeda(totalReceita)}</strong></span>
+            <span className="w-3 h-3 rounded-full bg-teal-500 inline-block" />
+            <span className="text-slate-700 dark:text-slate-300 font-semibold">Receita Total: <strong className="text-teal-600 dark:text-teal-400">{formatarMoeda(totalReceita)}</strong></span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="w-3 h-3 rounded-full bg-rose-400 inline-block" />
-            <span className="text-slate-300 font-semibold">Custo Total: <strong className="text-rose-400">{formatarMoeda(totalCusto)}</strong></span>
+            <span className="w-3 h-3 rounded-full bg-rose-500 inline-block" />
+            <span className="text-slate-700 dark:text-slate-300 font-semibold">Custo Total: <strong className="text-rose-600 dark:text-rose-400">{formatarMoeda(totalCusto)}</strong></span>
           </div>
         </div>
       </div>
@@ -54,27 +53,27 @@ export function FinancialChart({ data }: { data: DailyFinancialData[] }) {
           <AreaChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
             <defs>
               <linearGradient id="gradientReceita" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#2dd4bf" stopOpacity={0.4} />
-                <stop offset="95%" stopColor="#2dd4bf" stopOpacity={0} />
+                <stop offset="5%" stopColor="#0d9488" stopOpacity={0.4} />
+                <stop offset="95%" stopColor="#0d9488" stopOpacity={0} />
               </linearGradient>
               <linearGradient id="gradientCusto" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.3} />
-                <stop offset="95%" stopColor="#f43f5e" stopOpacity={0} />
+                <stop offset="5%" stopColor="#e11d48" stopOpacity={0.3} />
+                <stop offset="95%" stopColor="#e11d48" stopOpacity={0} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.5} />
+            <CartesianGrid strokeDasharray="3 3" stroke="#94a3b8" opacity={0.3} />
             <XAxis
               dataKey="data"
               stroke="#64748b"
               fontSize={11}
               tickLine={false}
-              axisLine={{ stroke: "#334155" }}
+              axisLine={{ stroke: "#cbd5e1" }}
             />
             <YAxis
               stroke="#64748b"
               fontSize={11}
               tickLine={false}
-              axisLine={{ stroke: "#334155" }}
+              axisLine={{ stroke: "#cbd5e1" }}
               tickFormatter={(val) => `R$${val}`}
             />
             <Tooltip
@@ -96,7 +95,7 @@ export function FinancialChart({ data }: { data: DailyFinancialData[] }) {
             <Area
               type="monotone"
               dataKey="receita"
-              stroke="#2dd4bf"
+              stroke="#0d9488"
               strokeWidth={3}
               fillOpacity={1}
               fill="url(#gradientReceita)"
@@ -104,7 +103,7 @@ export function FinancialChart({ data }: { data: DailyFinancialData[] }) {
             <Area
               type="monotone"
               dataKey="custo"
-              stroke="#f43f5e"
+              stroke="#e11d48"
               strokeWidth={2}
               fillOpacity={1}
               fill="url(#gradientCusto)"

@@ -58,25 +58,25 @@ export default function PrintersClientPage({ initialPrinters }: { initialPrinter
 
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-800 pb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-6">
         <div>
-          <h1 className="text-3xl font-extrabold text-slate-100 tracking-tight flex items-center gap-3">
-            <Printer className="w-8 h-8 text-teal-400" /> Impressoras 3D
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight flex items-center gap-3">
+            <Printer className="w-7 h-7 sm:w-8 sm:h-8 text-teal-500 dark:text-teal-400" /> Impressoras 3D
           </h1>
-          <p className="text-slate-400 text-sm mt-1">
+          <p className="text-slate-600 dark:text-slate-400 text-xs sm:text-sm mt-1">
             Cadastre os parâmetros da sua máquina para cálculo automático de consumo e depreciação.
           </p>
         </div>
-        <Button onClick={handleOpenCreate} variant="primary">
+        <Button onClick={handleOpenCreate} variant="primary" size="sm" className="w-full sm:w-auto">
           <Plus className="w-4 h-4" /> Nova Impressora
         </Button>
       </div>
 
       {initialPrinters.length === 0 ? (
-        <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-12 text-center">
-          <Printer className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-          <h3 className="text-lg font-semibold text-slate-200">Nenhuma impressora cadastrada</h3>
-          <p className="text-sm text-slate-400 mt-1 mb-6">
+        <div className="bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl p-12 text-center shadow-sm">
+          <Printer className="w-12 h-12 text-slate-400 dark:text-slate-600 mx-auto mb-3" />
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-200">Nenhuma impressora cadastrada</h3>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 mb-6">
             Adicione sua primeira impressora 3D para calcular custos de depreciação e energia.
           </p>
           <Button onClick={handleOpenCreate} variant="primary">
@@ -90,106 +90,108 @@ export default function PrintersClientPage({ initialPrinters }: { initialPrinter
             return (
               <div
                 key={printer.id}
-                className="bg-slate-900 border border-slate-800 rounded-2xl p-6 relative group hover:border-teal-500/40 transition-all shadow-lg"
+                className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 relative group hover:border-teal-500/40 transition-all shadow-md dark:shadow-lg flex flex-col justify-between"
               >
-                <div className="flex items-start justify-between mb-4">
-                  <div>
-                    <h3 className="text-lg font-bold text-slate-100">{printer.nome}</h3>
-                    {printer.modelo && (
-                      <span className="text-xs text-slate-400 font-medium">{printer.modelo}</span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
-                    <button
-                      onClick={() => handleOpenEdit(printer)}
-                      className="p-1.5 text-slate-400 hover:text-teal-400 hover:bg-slate-800 rounded-lg transition-colors"
-                      title="Editar"
-                    >
-                      <Edit2 className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => setDeletingPrinter(printer)}
-                      className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded-lg transition-colors"
-                      title="Excluir"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="space-y-2 text-xs text-slate-300 border-t border-slate-800/80 pt-4">
-                  <div className="flex items-center justify-between">
-                    <span className="flex items-center gap-1.5 text-slate-400">
-                      <Zap className="w-3.5 h-3.5 text-amber-400" /> Consumo Elétrico
-                    </span>
-                    <span className="font-semibold">{printer.consumoWatts} W</span>
+                <div>
+                  <div className="flex items-start justify-between mb-4">
+                    <div>
+                      <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">{printer.nome}</h3>
+                      {printer.modelo && (
+                        <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">{printer.modelo}</span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={() => handleOpenEdit(printer)}
+                        className="p-1.5 text-slate-400 hover:text-teal-500 dark:hover:text-teal-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                        title="Editar"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => setDeletingPrinter(printer)}
+                        className="p-1.5 text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                        title="Excluir"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
 
-                  <div className="flex items-center justify-between">
-                    <span className="flex items-center gap-1.5 text-slate-400">
-                      <DollarSign className="w-3.5 h-3.5 text-emerald-400" /> Preço de Compra
-                    </span>
-                    <span className="font-semibold">{formatarMoeda(printer.preco)}</span>
-                  </div>
+                  <div className="space-y-2 text-xs text-slate-700 dark:text-slate-300 border-t border-slate-200 dark:border-slate-800/80 pt-4">
+                    <div className="flex items-center justify-between">
+                      <span className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
+                        <Zap className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400" /> Consumo Elétrico
+                      </span>
+                      <span className="font-semibold">{printer.consumoWatts} W</span>
+                    </div>
 
-                  <div className="flex items-center justify-between">
-                    <span className="flex items-center gap-1.5 text-slate-400">
-                      <Clock className="w-3.5 h-3.5 text-cyan-400" /> Vida Útil Estimada
-                    </span>
-                    <span className="font-semibold">{printer.vidaUtilHoras.toLocaleString("pt-BR")} hs</span>
-                  </div>
+                    <div className="flex items-center justify-between">
+                      <span className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
+                        <DollarSign className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400" /> Preço de Compra
+                      </span>
+                      <span className="font-semibold">{formatarMoeda(printer.preco)}</span>
+                    </div>
 
-                  <div className="flex items-center justify-between pt-2 border-t border-slate-800/50">
-                    <span className="text-slate-400 font-medium">Depreciação por Hora</span>
-                    <span className="font-bold text-teal-400">{formatarMoeda(custoHoraDepreciacao)}/h</span>
-                  </div>
+                    <div className="flex items-center justify-between">
+                      <span className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
+                        <Clock className="w-3.5 h-3.5 text-cyan-500 dark:text-cyan-400" /> Vida Útil Estimada
+                      </span>
+                      <span className="font-semibold">{printer.vidaUtilHoras.toLocaleString("pt-BR")} hs</span>
+                    </div>
 
-                  {/* Maintenance Progress & Warning Section */}
-                  {(() => {
-                    const horasUso = printer.horasUsoAcumuladas || 0;
-                    const intervalo = printer.intervaloManutencaoHoras || 200;
-                    const pct = Math.min(100, Math.round((horasUso / intervalo) * 100));
-                    const necessitaManutencao = horasUso >= intervalo;
+                    <div className="flex items-center justify-between pt-2 border-t border-slate-200 dark:border-slate-800/50">
+                      <span className="text-slate-500 dark:text-slate-400 font-medium">Depreciação por Hora</span>
+                      <span className="font-bold text-teal-600 dark:text-teal-400">{formatarMoeda(custoHoraDepreciacao)}/h</span>
+                    </div>
 
-                    return (
-                      <div className="pt-3 border-t border-slate-800/80 space-y-2">
-                        <div className="flex items-center justify-between text-[11px]">
-                          <span className="text-slate-400 flex items-center gap-1 font-semibold">
-                            <Wrench className="w-3 h-3 text-amber-400" /> Manutenção Preventiva
-                          </span>
-                          <span className={necessitaManutencao ? "text-amber-400 font-bold animate-pulse" : "text-slate-400 font-mono"}>
-                            {horasUso.toFixed(1)}h / {intervalo}h ({pct}%)
-                          </span>
-                        </div>
+                    {/* Maintenance Progress & Warning Section */}
+                    {(() => {
+                      const horasUso = printer.horasUsoAcumuladas || 0;
+                      const intervalo = printer.intervaloManutencaoHoras || 200;
+                      const pct = Math.min(100, Math.round((horasUso / intervalo) * 100));
+                      const necessitaManutencao = horasUso >= intervalo;
 
-                        {/* Progress Bar */}
-                        <div className="w-full bg-slate-950 rounded-full h-1.5 overflow-hidden border border-slate-800">
-                          <div
-                            className={`h-full transition-all ${
-                              necessitaManutencao ? "bg-amber-400" : pct > 75 ? "bg-amber-500/80" : "bg-teal-400"
-                            }`}
-                            style={{ width: `${pct}%` }}
-                          />
-                        </div>
-
-                        {necessitaManutencao && (
-                          <div className="p-2 bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-300 text-[11px] font-bold flex items-center gap-1.5">
-                            <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-amber-400" />
-                            Manutenção recomendada!
+                      return (
+                        <div className="pt-3 border-t border-slate-200 dark:border-slate-800/80 space-y-2">
+                          <div className="flex items-center justify-between text-[11px]">
+                            <span className="text-slate-500 dark:text-slate-400 flex items-center gap-1 font-semibold">
+                              <Wrench className="w-3 h-3 text-amber-500 dark:text-amber-400" /> Manutenção Preventiva
+                            </span>
+                            <span className={necessitaManutencao ? "text-amber-500 font-bold animate-pulse" : "text-slate-500 dark:text-slate-400 font-mono"}>
+                              {horasUso.toFixed(1)}h / {intervalo}h ({pct}%)
+                            </span>
                           </div>
-                        )}
 
-                        <button
-                          onClick={async () => {
-                            await registrarManutencaoAction(printer.id);
-                          }}
-                          className="w-full py-1.5 px-2 bg-slate-800/80 hover:bg-slate-800 text-slate-300 hover:text-slate-100 rounded-xl text-[11px] font-semibold flex items-center justify-center gap-1.5 transition-colors border border-slate-700/60"
-                        >
-                          <CheckCircle2 className="w-3.5 h-3.5 text-teal-400" /> Registrar manutenção realizada
-                        </button>
-                      </div>
-                    );
-                  })()}
+                          {/* Progress Bar */}
+                          <div className="w-full bg-slate-100 dark:bg-slate-950 rounded-full h-1.5 overflow-hidden border border-slate-200 dark:border-slate-800">
+                            <div
+                              className={`h-full transition-all ${
+                                necessitaManutencao ? "bg-amber-500" : pct > 75 ? "bg-amber-500/80" : "bg-teal-500"
+                              }`}
+                              style={{ width: `${pct}%` }}
+                            />
+                          </div>
+
+                          {necessitaManutencao && (
+                            <div className="p-2 bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-700 dark:text-amber-300 text-[11px] font-bold flex items-center gap-1.5">
+                              <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-amber-500" />
+                              Manutenção recomendada!
+                            </div>
+                          )}
+
+                          <button
+                            onClick={async () => {
+                              await registrarManutencaoAction(printer.id);
+                            }}
+                            className="w-full py-1.5 px-2 bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 rounded-xl text-[11px] font-semibold flex items-center justify-center gap-1.5 transition-colors border border-slate-300 dark:border-slate-700/60"
+                          >
+                            <CheckCircle2 className="w-3.5 h-3.5 text-teal-500 dark:text-teal-400" /> Registrar manutenção realizada
+                          </button>
+                        </div>
+                      );
+                    })()}
+                  </div>
                 </div>
               </div>
             );

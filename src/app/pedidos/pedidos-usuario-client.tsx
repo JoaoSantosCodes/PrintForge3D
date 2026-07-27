@@ -142,20 +142,20 @@ export function PedidosUsuarioClient({
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-300 py-6">
+    <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-300 py-4 sm:py-6">
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-800 pb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-6">
         <div>
-          <h1 className="text-3xl font-extrabold text-slate-100 tracking-tight flex items-center gap-3">
-            <ShoppingBag className="w-8 h-8 text-teal-400" /> Meus Pedidos & Encomendas
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight flex items-center gap-3">
+            <ShoppingBag className="w-7 h-7 sm:w-8 sm:h-8 text-teal-500 dark:text-teal-400" /> Meus Pedidos & Encomendas
           </h1>
-          <p className="text-slate-400 text-sm mt-1">
+          <p className="text-slate-600 dark:text-slate-400 text-xs sm:text-sm mt-1">
             Acompanhe o status em tempo real das suas peças na fila de produção da PrintForge 3D.
           </p>
         </div>
 
         <Link href="/catalogo">
-          <Button variant="primary">
+          <Button variant="primary" size="sm" className="w-full sm:w-auto">
             <Sparkles className="w-4 h-4" /> Solicitar Novo Pedido
           </Button>
         </Link>
@@ -181,7 +181,7 @@ export function PedidosUsuarioClient({
             return (
               <div
                 key={pedido.id}
-                className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4 shadow-xl hover:border-slate-700 transition-all flex flex-col justify-between"
+                className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 sm:p-6 space-y-4 shadow-lg dark:shadow-xl hover:border-slate-300 dark:hover:border-slate-700 transition-all flex flex-col justify-between"
               >
                 <div className="space-y-4">
                   {/* Status Banner */}
@@ -197,7 +197,7 @@ export function PedidosUsuarioClient({
 
                   {/* Piece Info */}
                   <div className="flex gap-4 items-center">
-                    <div className="w-20 h-20 bg-slate-950 border border-slate-800 rounded-2xl overflow-hidden flex items-center justify-center shrink-0">
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden flex items-center justify-center shrink-0">
                       {pedido.peca.fotoUrl ? (
                         <img
                           src={pedido.peca.fotoUrl}
@@ -205,21 +205,21 @@ export function PedidosUsuarioClient({
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <Box className="w-8 h-8 text-slate-700" />
+                        <Box className="w-8 h-8 text-slate-400 dark:text-slate-700" />
                       )}
                     </div>
 
-                    <div className="space-y-1">
+                    <div className="space-y-1 min-w-0">
                       {pedido.peca.categoria && (
-                        <span className="text-[10px] font-semibold text-teal-400 uppercase tracking-wider">
+                        <span className="text-[10px] font-semibold text-teal-600 dark:text-teal-400 uppercase tracking-wider block">
                           {pedido.peca.categoria}
                         </span>
                       )}
-                      <h3 className="text-lg font-bold text-slate-100 line-clamp-1">
+                      <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 truncate">
                         {pedido.peca.nome}
                       </h3>
-                      <p className="text-xs text-slate-400 font-semibold">
-                        Quantidade: <strong className="text-slate-200">{pedido.quantidade}x unidades</strong>
+                      <p className="text-xs text-slate-600 dark:text-slate-400 font-semibold">
+                        Quantidade: <strong className="text-slate-800 dark:text-slate-200">{pedido.quantidade}x unidades</strong>
                       </p>
                     </div>
                   </div>

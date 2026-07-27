@@ -64,13 +64,13 @@ interface Pedido {
 }
 
 const STATUS_COLUMNS = [
-  { id: "pendente", label: "Aguardando", color: "border-slate-700 bg-slate-900/80 text-slate-300", badge: "bg-slate-800 text-slate-300", icon: Clock },
-  { id: "em_impressao", label: "Em Impressão", color: "border-cyan-500/30 bg-cyan-950/20 text-cyan-400", badge: "bg-cyan-500/10 text-cyan-400 border-cyan-500/20", icon: Printer },
-  { id: "pintando", label: "Pintura / Acabamento", color: "border-pink-500/30 bg-pink-950/20 text-pink-400", badge: "bg-pink-500/10 text-pink-400 border-pink-500/20", icon: Palette },
-  { id: "pronto", label: "Pronto", color: "border-emerald-500/30 bg-emerald-950/20 text-emerald-400", badge: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20", icon: CheckCircle2 },
-  { id: "enviado", label: "Enviado", color: "border-indigo-500/30 bg-indigo-950/20 text-indigo-400", badge: "bg-indigo-500/10 text-indigo-400 border-indigo-500/20", icon: Truck },
-  { id: "entregue", label: "Entregue", color: "border-teal-500/30 bg-teal-950/20 text-teal-400", badge: "bg-teal-500/10 text-teal-400 border-teal-500/20", icon: Sparkles },
-  { id: "cancelado", label: "Cancelados", color: "border-rose-500/30 bg-rose-950/20 text-rose-400", badge: "bg-rose-500/10 text-rose-400 border-rose-500/20", icon: XCircle },
+  { id: "pendente", label: "Aguardando", color: "border-slate-300 dark:border-slate-700/70 bg-slate-100/90 dark:bg-slate-900/80 text-slate-800 dark:text-slate-300", badge: "bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300", icon: Clock },
+  { id: "em_impressao", label: "Em Impressão", color: "border-cyan-500/30 bg-cyan-500/10 dark:bg-cyan-950/20 text-cyan-700 dark:text-cyan-400", badge: "bg-cyan-500/10 text-cyan-700 dark:text-cyan-400 border border-cyan-500/20", icon: Printer },
+  { id: "pintando", label: "Pintura / Acabamento", color: "border-pink-500/30 bg-pink-500/10 dark:bg-pink-950/20 text-pink-700 dark:text-pink-400", badge: "bg-pink-500/10 text-pink-700 dark:text-pink-400 border border-pink-500/20", icon: Palette },
+  { id: "pronto", label: "Pronto", color: "border-emerald-500/30 bg-emerald-500/10 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400", badge: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20", icon: CheckCircle2 },
+  { id: "enviado", label: "Enviado", color: "border-indigo-500/30 bg-indigo-500/10 dark:bg-indigo-950/20 text-indigo-700 dark:text-indigo-400", badge: "bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border border-indigo-500/20", icon: Truck },
+  { id: "entregue", label: "Entregue", color: "border-teal-500/30 bg-teal-500/10 dark:bg-teal-950/20 text-teal-700 dark:text-teal-400", badge: "bg-teal-500/10 text-teal-700 dark:text-teal-400 border border-teal-500/20", icon: Sparkles },
+  { id: "cancelado", label: "Cancelados", color: "border-rose-500/30 bg-rose-500/10 dark:bg-rose-950/20 text-rose-700 dark:text-rose-400", badge: "bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-500/20", icon: XCircle },
 ];
 
 export default function PedidosClientPage({
@@ -204,61 +204,64 @@ export default function PedidosClientPage({
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-800 pb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-6">
         <div>
-          <h1 className="text-3xl font-extrabold text-slate-100 tracking-tight flex items-center gap-3">
-            <ShoppingBag className="w-8 h-8 text-teal-400" />
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight flex items-center gap-3">
+            <ShoppingBag className="w-7 h-7 sm:w-8 sm:h-8 text-teal-500 dark:text-teal-400" />
             Gestão de Pedidos & Encomendas
           </h1>
-          <p className="text-slate-400 text-sm mt-1">
+          <p className="text-slate-600 dark:text-slate-400 text-xs sm:text-sm mt-1">
             Quadro Kanban para acompanhamento de produção, prazos e clientes.
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <Button variant="outline" onClick={handleExportCSV}>
-            <Download className="w-4 h-4" /> Exportar CSV
+        <div className="flex items-center gap-2 sm:gap-3">
+          <Button variant="outline" size="sm" onClick={handleExportCSV} className="text-xs">
+            <Download className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Exportar </span>CSV
           </Button>
-          <Button onClick={() => handleOpenModal()} variant="primary">
-            <Plus className="w-4 h-4" /> Novo Pedido
+          <Button onClick={() => handleOpenModal()} variant="primary" size="sm" className="text-xs">
+            <Plus className="w-3.5 h-3.5" /> Novo Pedido
           </Button>
         </div>
       </div>
 
       {/* Filters & Search */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-slate-900/60 p-4 rounded-2xl border border-slate-800">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white dark:bg-slate-900/60 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
         <div className="relative w-full sm:w-80">
-          <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             placeholder="Buscar por cliente, telefone ou peça..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-teal-500"
+            className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs sm:text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-teal-500"
           />
         </div>
 
-        <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
+        {/* Mobile & Desktop Status Tab Filters */}
+        <div className="flex items-center gap-1.5 sm:gap-2 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0 scrollbar-thin">
           <button
+            type="button"
             onClick={() => setSelectedStatusFilter("todos")}
             className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
               selectedStatusFilter === "todos"
-                ? "bg-teal-500/20 text-teal-300 border border-teal-500/30"
-                : "bg-slate-950 border border-slate-800 text-slate-400 hover:text-slate-200"
+                ? "bg-teal-500/20 text-teal-700 dark:text-teal-300 border border-teal-500/30"
+                : "bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
             }`}
           >
-            Todos os Pedidos ({pedidos.length})
+            Todos ({pedidos.length})
           </button>
           {STATUS_COLUMNS.map((col) => {
             const count = pedidos.filter((p) => p.status === col.id).length;
             return (
               <button
+                type="button"
                 key={col.id}
                 onClick={() => setSelectedStatusFilter(col.id)}
                 className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
                   selectedStatusFilter === col.id
-                    ? "bg-teal-500/20 text-teal-300 border border-teal-500/30"
-                    : "bg-slate-950 border border-slate-800 text-slate-400 hover:text-slate-200"
+                    ? "bg-teal-500/20 text-teal-700 dark:text-teal-300 border border-teal-500/30"
+                    : "bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
                 }`}
               >
                 {col.label} ({count})
