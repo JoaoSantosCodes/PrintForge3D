@@ -191,7 +191,7 @@ export async function criarUsuarioSuperAdminAction(formData: FormData) {
       return { error: "A senha deve ter no mínimo 6 caracteres." };
     }
 
-    // Verificar se já existe perfil com este e-mail (usando select seguro)
+    // Verificar se já existe perfil com este e-mail
     let existing: any = null;
     try {
       existing = await prisma.profile.findFirst({
@@ -250,20 +250,19 @@ export async function criarUsuarioSuperAdminAction(formData: FormData) {
         },
       });
     } catch (createErr: any) {
-      console.warn("Aviso: Falha ao criar perfil com empresaId, tentando fallback omitindo empresaId:", createErr?.message);
+      console.warn("Aviso ao criar perfil Prisma (desalinhamento de colunas no Postgres):", createErr?.message);
       try {
-        profile = await prisma.profile.create({
-          data: {
-            id: authUserId,
-            email,
-            nome: nome || email.split("@")[0],
-            role,
-            status,
-            aprovadoEm: status === "aprovado" ? new Date() : null,
-          },
-        });
-      } catch (fallbackErr: any) {
-        return { error: fallbackErr?.message || "Não foi possível cadastrar o perfil no banco de dados." };
+        await prisma.$executeRawUnsafe(
+          `INSERT INTO "Profile" ("id", "email", "nome", "role", "status") VALUES ($1, $2, $3, $4, $5)`,
+          authUserId,
+          email,
+          nome || email.split("@")[0],
+          role,
+          status
+        );
+        profile = { id: authUserId, email, nome: nome || email.split("@")[0], role, status };
+      } catch (rawErr: any) {
+        return { error: `Erro no banco de dados: ${rawErr?.message || "Não foi possível cadastrar o perfil."}` };
       }
     }
 
