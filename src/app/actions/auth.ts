@@ -125,38 +125,76 @@ export async function loginAction(formData: FormData) {
 
     const authUser = authData.user;
 
-    let profile = await prisma.profile.findUnique({
-      where: { email },
-    }).catch(() => null);
+    let dbError = false;
+    let profile = null;
 
-    const adminEmail = (process.env.ADMIN_EMAIL || "admin@printforge3d.com").toLowerCase();
-    const superAdminEmail = (process.env.SUPERADMIN_EMAIL || "superadmin@printforge3d.com").toLowerCase();
+    try {
+      profile = await prisma.profile.findUnique({
+        where: { email },
+      });
+    } catch (err) {
+      console.error("Erro ao buscar perfil no banco de dados:", err);
+      dbError = true;
+    }
 
-    const isSystemAdmin = email === adminEmail;
-    const isSystemSuperAdmin = email === superAdminEmail;
+    const envAdmin = process.env.ADMIN_EMAIL ? process.env.ADMIN_EMAIL.toLowerCase() : "";
+    const envSuperAdmin = process.env.SUPERADMIN_EMAIL ? process.env.SUPERADMIN_EMAIL.toLowerCase() : "";
 
-    if (!profile) {
-      const defaultRole = isSystemSuperAdmin ? "super_admin" : isSystemAdmin ? "admin" : "usuario";
-      const defaultStatus = (isSystemAdmin || isSystemSuperAdmin) ? "aprovado" : "pendente";
+    const isSystemAdmin = email === "admin@printforge3d.com" || (envAdmin !== "" && email === envAdmin);
+    const isSystemSuperAdmin = email === "superadmin@printforge3d.com" || (envSuperAdmin !== "" && email === envSuperAdmin);
 
-      profile = await prisma.profile.create({
-        data: {
-          id: authUser.id,
-          email: authUser.email || email,
-          nome: authUser.user_metadata?.nome || email.split("@")[0],
-          role: defaultRole,
-          status: defaultStatus,
-        },
-      }).catch(() => null);
-    } else if ((isSystemAdmin || isSystemSuperAdmin) && profile.status === "pendente") {
+    if (isSystemAdmin || isSystemSuperAdmin) {
       const targetRole = isSystemSuperAdmin ? "super_admin" : "admin";
-      profile = await prisma.profile.update({
-        where: { id: profile.id },
-        data: {
-          role: targetRole,
-          status: "aprovado",
-        },
-      }).catch(() => profile);
+
+      if (!profile) {
+        try {
+          profile = await prisma.profile.create({
+            data: {
+              id: authUser.id,
+              email: authUser.email || email,
+              nome: authUser.user_metadata?.nome || email.split("@")[0],
+              role: targetRole,
+              status: "aprovado",
+            },
+          });
+        } catch (createErr) {
+          console.error("Erro ao criar perfil de sistema no banco:", createErr);
+        }
+      } else {
+        try {
+          profile = await prisma.profile.update({
+            where: { id: profile.id },
+            data: {
+              id: authUser.id,
+              role: targetRole,
+              status: "aprovado",
+            },
+          });
+        } catch (updateErr) {
+          console.error("Erro ao atualizar perfil de sistema no banco:", updateErr);
+        }
+      }
+    } else if (!profile && !dbError) {
+      try {
+        profile = await prisma.profile.create({
+          data: {
+            id: authUser.id,
+            email: authUser.email || email,
+            nome: authUser.user_metadata?.nome || email.split("@")[0],
+            role: "usuario",
+            status: "pendente",
+          },
+        });
+      } catch (createErr) {
+        console.error("Erro ao criar perfil padrão no banco:", createErr);
+      }
+    }
+
+    if (dbError && !profile) {
+      await supabase.auth.signOut().catch(() => {});
+      return {
+        error: "Não foi possível conectar ao banco de dados para validar seu perfil. Tente novamente em instantes.",
+      };
     }
 
     if (!profile || profile.status === "pendente") {
