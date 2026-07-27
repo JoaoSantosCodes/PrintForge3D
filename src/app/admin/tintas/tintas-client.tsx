@@ -258,16 +258,16 @@ export default function TintasClientPage({
                 filteredTintas.map((tinta) => {
                   const custoPorMl = tinta.volumeMl > 0 ? tinta.preco / tinta.volumeMl : 0;
                   return (
-                    <tr key={tinta.id} className="hover:bg-slate-800/40 transition-colors group">
-                      <td className="py-4 px-6 font-semibold text-slate-100 flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-lg bg-pink-500/10 flex items-center justify-center text-pink-400">
+                    <tr key={tinta.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors group">
+                      <td className="py-4 px-6 font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-lg bg-pink-500/10 flex items-center justify-center text-pink-600 dark:text-pink-400">
                           <Droplet className="w-4 h-4" />
                         </div>
                         {tinta.nome}
                       </td>
-                      <td className="py-4 px-6 text-slate-400">{tinta.marca || "—"}</td>
+                      <td className="py-4 px-6 text-slate-600 dark:text-slate-400">{tinta.marca || "—"}</td>
                       <td className="py-4 px-6">
-                        <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-800 border border-slate-700 text-slate-300">
+                        <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">
                           {tinta.tipo}
                         </span>
                       </td>
