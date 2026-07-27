@@ -176,7 +176,7 @@ export default async function AdminDashboardPage() {
         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <Link href="/admin/pedidos">
             <Button variant="secondary" size="sm">
-              <ShoppingBag className="w-4 h-4 text-teal-600 dark:text-teal-400" /> Ver Pedidos ({totalPedidos})
+              <ShoppingBag className="w-4 h-4 text-amber-600 dark:text-amber-400" /> Ver Pedidos ({totalPedidos})
             </Button>
           </Link>
           <Link href="/admin/pecas/nova">
@@ -188,9 +188,9 @@ export default async function AdminDashboardPage() {
       </div>
 
       {pendingProfilesCount > 0 && (
-        <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-lg shadow-amber-500/5">
+        <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center font-bold">
+            <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center font-bold border border-amber-500/30 shrink-0">
               <Users className="w-5 h-5" />
             </div>
             <div>
@@ -212,148 +212,169 @@ export default async function AdminDashboardPage() {
 
       {/* Financial & Order Metrics Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 relative overflow-hidden group shadow-md dark:shadow-lg">
-          <div className="absolute top-0 right-0 p-4 text-amber-500/10 group-hover:text-amber-500/20 transition-colors">
-            <Clock className="w-16 h-16" />
+        {/* Metric Card 1: Pedidos Pendentes (Âmbar - Alerta / Fluxo) */}
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 relative overflow-hidden group shadow-sm hover:shadow-md transition-all">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+              Pedidos Pendentes
+            </span>
+            <div className="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center border border-amber-500/20 shrink-0">
+              <Clock className="w-5 h-5" />
+            </div>
           </div>
-          <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
-            Pedidos Pendentes
-          </p>
-          <div className="text-4xl font-extrabold text-amber-600 dark:text-amber-400">{pedidosPendentes}</div>
-          <p className="text-xs text-slate-500 mt-2">
+          <div className="text-3xl sm:text-4xl font-black text-amber-600 dark:text-amber-400 tracking-tight">
+            {pedidosPendentes}
+          </div>
+          <p className="text-xs text-slate-600 dark:text-slate-300 font-medium mt-2">
             Aguardando aprovação ou fila
           </p>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 relative overflow-hidden group shadow-md dark:shadow-lg">
-          <div className="absolute top-0 right-0 p-4 text-cyan-500/10 group-hover:text-cyan-500/20 transition-colors">
-            <Printer className="w-16 h-16" />
+        {/* Metric Card 2: Em Produção (Ciano - Equipamento / Operação) */}
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 relative overflow-hidden group shadow-sm hover:shadow-md transition-all">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+              Em Produção
+            </span>
+            <div className="w-9 h-9 rounded-xl bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 flex items-center justify-center border border-cyan-500/20 shrink-0">
+              <Printer className="w-5 h-5" />
+            </div>
           </div>
-          <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
-            Em Produção
-          </p>
-          <div className="text-4xl font-extrabold text-cyan-600 dark:text-cyan-400">{pedidosEmProducao}</div>
-          <p className="text-xs text-slate-500 mt-2">
+          <div className="text-3xl sm:text-4xl font-black text-cyan-600 dark:text-cyan-400 tracking-tight">
+            {pedidosEmProducao}
+          </div>
+          <p className="text-xs text-slate-600 dark:text-slate-300 font-medium mt-2">
             Imprimindo ou em pintura
           </p>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 relative overflow-hidden group shadow-md dark:shadow-lg">
-          <div className="absolute top-0 right-0 p-4 text-teal-500/10 group-hover:text-teal-500/20 transition-colors">
-            <DollarSign className="w-16 h-16" />
+        {/* Metric Card 3: Custo Total de Produção (Rose - Saída Financeira / Custos) */}
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 relative overflow-hidden group shadow-sm hover:shadow-md transition-all">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+              Custo Total de Produção
+            </span>
+            <div className="w-9 h-9 rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center border border-rose-500/20 shrink-0">
+              <DollarSign className="w-5 h-5" />
+            </div>
           </div>
-          <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
-            Custo Total de Produção
-          </p>
-          <div className="text-4xl font-extrabold text-teal-600 dark:text-teal-400">
+          <div className="text-3xl sm:text-4xl font-black text-rose-600 dark:text-rose-400 tracking-tight">
             {formatarMoeda(custoTotalMes)}
           </div>
-          <p className="text-xs text-slate-500 mt-2">
+          <p className="text-xs text-slate-600 dark:text-slate-300 font-medium mt-2">
             Materiais, energia, depreciação e acabamento
           </p>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 relative overflow-hidden group shadow-md dark:shadow-lg">
-          <div className="absolute top-0 right-0 p-4 text-emerald-500/10 group-hover:text-emerald-500/20 transition-colors">
-            <TrendingUp className="w-16 h-16" />
+        {/* Metric Card 4: Lucro Estimado Total (Emerald - Resultado Financeiro) */}
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 relative overflow-hidden group shadow-sm hover:shadow-md transition-all">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+              Lucro Estimado Total
+            </span>
+            <div className="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-500/20 shrink-0">
+              <TrendingUp className="w-5 h-5" />
+            </div>
           </div>
-          <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
-            Lucro Estimado Total
-          </p>
-          <div className="text-4xl font-extrabold text-emerald-600 dark:text-emerald-400">
+          <div className="text-3xl sm:text-4xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight">
             {formatarMoeda(lucroEstimadoMes)}
           </div>
-          <p className="text-xs text-slate-500 mt-2">
+          <p className="text-xs text-slate-600 dark:text-slate-300 font-medium mt-2">
             Baseado em margem de 100%
           </p>
         </div>
       </div>
 
-      {/* Financial Chart Recharts Section */}
+      {/* Financial Chart Section */}
       <FinancialChart data={chartData} />
 
-      {/* Quick Navigation Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+      {/* Quick Navigation Shortcut Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5">
+        {/* Shortcut 1: Pedidos & Kanban (Âmbar) */}
         <Link href="/admin/pedidos" className="block group">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-amber-500/40 rounded-2xl p-6 transition-all shadow-sm hover:shadow-xl hover:shadow-amber-500/5">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
-                <ShoppingBag className="w-6 h-6" />
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-amber-500/50 rounded-2xl p-5 transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-amber-500/5 hover:-translate-y-0.5">
+            <div className="flex items-center justify-between mb-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center border border-amber-500/20 group-hover:scale-105 transition-transform shrink-0">
+                <ShoppingBag className="w-5 h-5" />
               </div>
-              <span className="text-2xl font-bold text-slate-900 dark:text-slate-200">{totalPedidos}</span>
+              <span className="text-2xl font-black text-slate-900 dark:text-slate-100">{totalPedidos}</span>
             </div>
-            <h3 className="font-semibold text-slate-900 dark:text-slate-100 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+            <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
               Pedidos & Kanban
             </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            <p className="text-xs text-slate-600 dark:text-slate-300 font-medium mt-1 leading-relaxed">
               Kanban de encomendas, prazos e clientes.
             </p>
           </div>
         </Link>
 
+        {/* Shortcut 2: Impressoras (Ciano) */}
         <Link href="/admin/impressoras" className="block group">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-teal-500/40 rounded-2xl p-6 transition-all shadow-sm hover:shadow-xl hover:shadow-teal-500/5">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400">
-                <Printer className="w-6 h-6" />
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-cyan-500/50 rounded-2xl p-5 transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-cyan-500/5 hover:-translate-y-0.5">
+            <div className="flex items-center justify-between mb-3">
+              <div className="w-10 h-10 rounded-xl bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 flex items-center justify-center border border-cyan-500/20 group-hover:scale-105 transition-transform shrink-0">
+                <Printer className="w-5 h-5" />
               </div>
-              <span className="text-2xl font-bold text-slate-900 dark:text-slate-200">{totalImpressoras}</span>
+              <span className="text-2xl font-black text-slate-900 dark:text-slate-100">{totalImpressoras}</span>
             </div>
-            <h3 className="font-semibold text-slate-900 dark:text-slate-100 group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors">
+            <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100 group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors">
               Impressoras
             </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            <p className="text-xs text-slate-600 dark:text-slate-300 font-medium mt-1 leading-relaxed">
               Consumo (Watts), preço e depreciação.
             </p>
           </div>
         </Link>
 
+        {/* Shortcut 3: Filamentos & Resinas (Índigo) */}
         <Link href="/admin/filamentos" className="block group">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-cyan-500/40 rounded-2xl p-6 transition-all shadow-sm hover:shadow-xl hover:shadow-cyan-500/5">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 rounded-xl bg-cyan-500/10 text-cyan-600 dark:text-cyan-400">
-                <Boxes className="w-6 h-6" />
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-indigo-500/50 rounded-2xl p-5 transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-indigo-500/5 hover:-translate-y-0.5">
+            <div className="flex items-center justify-between mb-3">
+              <div className="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center border border-indigo-500/20 group-hover:scale-105 transition-transform shrink-0">
+                <Boxes className="w-5 h-5" />
               </div>
-              <span className="text-2xl font-bold text-slate-900 dark:text-slate-200">{totalFilamentos}</span>
+              <span className="text-2xl font-black text-slate-900 dark:text-slate-100">{totalFilamentos}</span>
             </div>
-            <h3 className="font-semibold text-slate-900 dark:text-slate-100 group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors">
+            <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
               Filamentos & Resinas
             </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            <p className="text-xs text-slate-600 dark:text-slate-300 font-medium mt-1 leading-relaxed">
               PLA, PETG, Resina por kg e cores.
             </p>
           </div>
         </Link>
 
+        {/* Shortcut 4: Tintas & Pintura (Pink) */}
         <Link href="/admin/tintas" className="block group">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-pink-500/40 rounded-2xl p-6 transition-all shadow-sm hover:shadow-xl hover:shadow-pink-500/5">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 rounded-xl bg-pink-500/10 text-pink-600 dark:text-pink-400">
-                <Palette className="w-6 h-6" />
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-pink-500/50 rounded-2xl p-5 transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-pink-500/5 hover:-translate-y-0.5">
+            <div className="flex items-center justify-between mb-3">
+              <div className="w-10 h-10 rounded-xl bg-pink-500/10 text-pink-600 dark:text-pink-400 flex items-center justify-center border border-pink-500/20 group-hover:scale-105 transition-transform shrink-0">
+                <Palette className="w-5 h-5" />
               </div>
-              <span className="text-2xl font-bold text-slate-900 dark:text-slate-200">{totalTintas}</span>
+              <span className="text-2xl font-black text-slate-900 dark:text-slate-100">{totalTintas}</span>
             </div>
-            <h3 className="font-semibold text-slate-900 dark:text-slate-100 group-hover:text-pink-600 dark:group-hover:text-pink-400 transition-colors">
+            <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100 group-hover:text-pink-600 dark:group-hover:text-pink-400 transition-colors">
               Tintas & Pintura
             </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            <p className="text-xs text-slate-600 dark:text-slate-300 font-medium mt-1 leading-relaxed">
               Primers, acrílicas, sprays e insumos.
             </p>
           </div>
         </Link>
 
+        {/* Shortcut 5: Peças & Custos (Roxo) */}
         <Link href="/admin/pecas" className="block group">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-purple-500/40 rounded-2xl p-6 transition-all shadow-sm hover:shadow-xl hover:shadow-purple-500/5">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400">
-                <Layers className="w-6 h-6" />
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-purple-500/50 rounded-2xl p-5 transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-purple-500/5 hover:-translate-y-0.5">
+            <div className="flex items-center justify-between mb-3">
+              <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center border border-purple-500/20 group-hover:scale-105 transition-transform shrink-0">
+                <Layers className="w-5 h-5" />
               </div>
-              <span className="text-2xl font-bold text-slate-900 dark:text-slate-200">{totalPecas}</span>
+              <span className="text-2xl font-black text-slate-900 dark:text-slate-100">{totalPecas}</span>
             </div>
-            <h3 className="font-semibold text-slate-900 dark:text-slate-100 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
+            <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
               Peças & Custos
             </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            <p className="text-xs text-slate-600 dark:text-slate-300 font-medium mt-1 leading-relaxed">
               Cálculo completo e controle do catálogo.
             </p>
           </div>

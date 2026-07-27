@@ -106,10 +106,6 @@ export function FinancialChart({ data }: { data: DailyFinancialData[] }) {
               formatter={(value: any) => [formatarMoeda(Number(value)), ""]}
               labelFormatter={(label) => `Data: ${label}`}
             />
-            <Legend
-              wrapperStyle={{ fontSize: "12px", paddingTop: "10px" }}
-              formatter={(value) => (value === "receita" ? "Receita (R$)" : "Custo (R$)")}
-            />
             <Area
               type="monotone"
               dataKey="receita"
