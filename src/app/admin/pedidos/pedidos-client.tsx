@@ -202,83 +202,86 @@ export default function PedidosClientPage({
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-300">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-6">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight flex items-center gap-3">
-            <ShoppingBag className="w-7 h-7 sm:w-8 sm:h-8 text-teal-500 dark:text-teal-400" />
-            Gestão de Pedidos & Encomendas
-          </h1>
-          <p className="text-slate-600 dark:text-slate-400 text-xs sm:text-sm mt-1">
-            Quadro Kanban para acompanhamento de produção, prazos e clientes.
-          </p>
+    <div className="space-y-6 animate-in fade-in duration-300">
+      {/* Sticky Controls Header */}
+      <div className="sticky -top-4 sm:-top-6 lg:-top-8 z-20 bg-slate-50 dark:bg-slate-950 pt-2 pb-4 space-y-4 border-b border-slate-200 dark:border-slate-800 transition-colors">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight flex items-center gap-3">
+              <ShoppingBag className="w-7 h-7 sm:w-8 sm:h-8 text-teal-500 dark:text-teal-400" />
+              Gestão de Pedidos & Encomendas
+            </h1>
+            <p className="text-slate-600 dark:text-slate-400 text-xs sm:text-sm mt-1">
+              Quadro Kanban para acompanhamento de produção, prazos e clientes.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Button variant="outline" size="sm" onClick={handleExportCSV} className="text-xs">
+              <Download className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Exportar </span>CSV
+            </Button>
+            <Button onClick={() => handleOpenModal()} variant="primary" size="sm" className="text-xs">
+              <Plus className="w-3.5 h-3.5" /> Novo Pedido
+            </Button>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2 sm:gap-3">
-          <Button variant="outline" size="sm" onClick={handleExportCSV} className="text-xs">
-            <Download className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Exportar </span>CSV
-          </Button>
-          <Button onClick={() => handleOpenModal()} variant="primary" size="sm" className="text-xs">
-            <Plus className="w-3.5 h-3.5" /> Novo Pedido
-          </Button>
+        {/* Filters & Search */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white dark:bg-slate-900/60 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm transition-colors">
+          <div className="relative w-full lg:w-80 shrink-0">
+            <Search className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Buscar por cliente, telefone ou peça..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs sm:text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-teal-500 transition-colors"
+            />
+          </div>
+
+          {/* Mobile & Desktop Status Tab Filters */}
+          <div className="flex items-center gap-1.5 sm:gap-2 w-full lg:w-auto overflow-x-auto pb-1 lg:pb-0 scrollbar-thin">
+            <button
+              type="button"
+              onClick={() => setSelectedStatusFilter("todos")}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
+                selectedStatusFilter === "todos"
+                  ? "bg-teal-500/20 text-teal-700 dark:text-teal-300 border border-teal-500/30"
+                  : "bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+              }`}
+            >
+              Todos ({pedidos.length})
+            </button>
+            {STATUS_COLUMNS.map((col) => {
+              const count = pedidos.filter((p) => p.status === col.id).length;
+              return (
+                <button
+                  type="button"
+                  key={col.id}
+                  onClick={() => setSelectedStatusFilter(col.id)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
+                    selectedStatusFilter === col.id
+                      ? "bg-teal-500/20 text-teal-700 dark:text-teal-300 border border-teal-500/30"
+                      : "bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+                  }`}
+                >
+                  {col.label} ({count})
+                </button>
+              );
+            })}
+          </div>
         </div>
+
+        {/* Scroll Indicator Cue for Intermediate Viewports */}
+        {selectedStatusFilter === "todos" && (
+          <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 px-1 2xl:hidden">
+            <span className="flex items-center gap-1.5 font-medium text-[11px] sm:text-xs">
+              <ChevronLeft className="w-4 h-4 text-teal-500 animate-pulse" /> Deslize horizontalmente para navegar pelas colunas do Kanban <ChevronRight className="w-4 h-4 text-teal-500 animate-pulse" />
+            </span>
+          </div>
+        )}
       </div>
-
-      {/* Filters & Search */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white dark:bg-slate-900/60 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm transition-colors">
-        <div className="relative w-full lg:w-80 shrink-0">
-          <Search className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            placeholder="Buscar por cliente, telefone ou peça..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs sm:text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-teal-500 transition-colors"
-          />
-        </div>
-
-        {/* Mobile & Desktop Status Tab Filters */}
-        <div className="flex items-center gap-1.5 sm:gap-2 w-full lg:w-auto overflow-x-auto pb-1 lg:pb-0 scrollbar-thin">
-          <button
-            type="button"
-            onClick={() => setSelectedStatusFilter("todos")}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
-              selectedStatusFilter === "todos"
-                ? "bg-teal-500/20 text-teal-700 dark:text-teal-300 border border-teal-500/30"
-                : "bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
-            }`}
-          >
-            Todos ({pedidos.length})
-          </button>
-          {STATUS_COLUMNS.map((col) => {
-            const count = pedidos.filter((p) => p.status === col.id).length;
-            return (
-              <button
-                type="button"
-                key={col.id}
-                onClick={() => setSelectedStatusFilter(col.id)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
-                  selectedStatusFilter === col.id
-                    ? "bg-teal-500/20 text-teal-700 dark:text-teal-300 border border-teal-500/30"
-                    : "bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
-                }`}
-              >
-                {col.label} ({count})
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Scroll Indicator Cue for Intermediate Viewports */}
-      {selectedStatusFilter === "todos" && (
-        <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 px-1 2xl:hidden">
-          <span className="flex items-center gap-1.5 font-medium text-[11px] sm:text-xs">
-            <ChevronLeft className="w-4 h-4 text-teal-500 animate-pulse" /> Deslize horizontalmente para navegar pelas colunas do Kanban <ChevronRight className="w-4 h-4 text-teal-500 animate-pulse" />
-          </span>
-        </div>
-      )}
 
       {/* Kanban Board Container */}
       <div className={`gap-4 ${
@@ -292,7 +295,7 @@ export default function PedidosClientPage({
           return (
             <div
               key={col.id}
-              className={`flex flex-col bg-white dark:bg-slate-900/70 border rounded-2xl p-4 min-h-[500px] ${
+              className={`flex flex-col bg-white dark:bg-slate-900/70 border rounded-2xl p-4 md:h-[calc(100vh-250px)] min-h-[480px] ${
                 selectedStatusFilter === "todos" ? "w-full min-w-[280px] sm:min-w-[300px] flex-1 flex-shrink-0 snap-start" : "w-full"
               } shadow-sm transition-colors ${col.color}`}
             >
