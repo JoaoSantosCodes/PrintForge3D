@@ -1,22 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-
-export const RESERVED_SLUGS = [
-  "admin",
-  "superadmin",
-  "login",
-  "cadastro",
-  "catalogo",
-  "loja",
-  "api",
-  "perfil",
-  "pedidos",
-  "criar-loja",
-  "esqueci-senha",
-  "redefinir-senha",
-  "termos",
-  "privacidade",
-];
+import { RESERVED_SLUGS } from "@/lib/constants";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);

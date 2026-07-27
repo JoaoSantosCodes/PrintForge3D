@@ -1,0 +1,16 @@
+export const RESERVED_SLUGS = [
+  "admin",
+  "superadmin",
+  "login",
+  "cadastro",
+  "catalogo",
+  "loja",
+  "api",
+  "perfil",
+  "pedidos",
+  "criar-loja",
+  "esqueci-senha",
+  "redefinir-senha",
+  "termos",
+  "privacidade",
+];

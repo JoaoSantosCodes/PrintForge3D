@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
+import { RESERVED_SLUGS } from "@/lib/constants";
 import { z } from "zod";
 
 const criarLojaSchema = z.object({
@@ -30,23 +31,7 @@ export async function criarLojaAction(formData: FormData) {
     const v = criarLojaSchema.parse(rawData);
 
     // 1. Validar se o slug é reservado
-    const reservedSlugs = [
-      "admin",
-      "superadmin",
-      "login",
-      "cadastro",
-      "catalogo",
-      "loja",
-      "api",
-      "perfil",
-      "pedidos",
-      "criar-loja",
-      "esqueci-senha",
-      "redefinir-senha",
-      "termos",
-      "privacidade",
-    ];
-    if (reservedSlugs.includes(v.slug)) {
+    if (RESERVED_SLUGS.includes(v.slug)) {
       return { error: "Este nome não está disponível" };
     }
 
