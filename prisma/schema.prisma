@@ -12,16 +12,59 @@ model Profile {
   id          String    @id // Mesmo ID do Supabase Auth (auth.users.id)
   email       String    @unique
   nome        String?
-  role        String    @default("usuario") // "admin" | "usuario"
+  role        String    @default("usuario") // "super_admin" | "admin" | "usuario"
   status      String    @default("pendente") // "pendente" | "aprovado" | "bloqueado"
+  empresaId   String?
+  empresa     Empresa?  @relation(fields: [empresaId], references: [id], onDelete: SetNull)
   createdAt   DateTime  @default(now())
   aprovadoEm  DateTime?
 
   pedidos     Pedido[]
 }
 
+model Plano {
+  id                String    @id @default(cuid())
+  nome              String    // ex: "Starter", "Pro", "Business"
+  slug              String    @unique
+  precoMensal       Float
+  limiteImpressoras Int
+  limitePecas       Int
+  limitePedidosMes  Int
+  limiteUsuarios    Int       // funcionários/atendentes da empresa, se aplicável
+  ativo             Boolean   @default(true)
+  createdAt         DateTime  @default(now())
+
+  empresas          Empresa[]
+}
+
+model Empresa {
+  id               String    @id @default(cuid())
+  nome             String
+  slug             String    @unique // usado na URL pública /loja/[slug]
+  planoId          String
+  plano            Plano     @relation(fields: [planoId], references: [id])
+  status           String    @default("trial") // trial | ativo | inadimplente | cancelado | bloqueado | trial_expirado
+  trialExpiraEm    DateTime?
+  proximaCobranca  DateTime?
+  chavePixCobranca String?   // chave PIX da EMPRESA para receber de SEUS clientes (diferente da assinatura)
+  createdAt        DateTime  @default(now())
+
+  profiles         Profile[]
+  printers         Printer[]
+  filaments        Filament[]
+  filamentPrices   FilamentPriceHistory[]
+  tintas           Tinta[]
+  pecas            Peca[]
+  pedidos          Pedido[]
+  cupons           Cupom[]
+  configuracoes    Configuracao[]
+  auditLogs        AuditLog[]
+}
+
 model AuditLog {
   id          String   @id @default(cuid())
+  empresaId   String
+  empresa     Empresa  @relation(fields: [empresaId], references: [id], onDelete: Cascade)
   adminId     String   // Profile.id de quem executou a ação
   acao        String   // ex: "aprovou_usuario", "bloqueou_usuario", "reativou_usuario"
   alvoId      String?  // Profile.id do usuário afetado, quando aplicável
@@ -31,6 +74,8 @@ model AuditLog {
 
 model Printer {
   id                      String    @id @default(cuid())
+  empresaId               String
+  empresa                 Empresa   @relation(fields: [empresaId], references: [id], onDelete: Cascade)
   nome                    String
   modelo                  String?
   consumoWatts            Float
@@ -45,6 +90,8 @@ model Printer {
 
 model Filament {
   id                 String                 @id @default(cuid())
+  empresaId          String
+  empresa            Empresa                @relation(fields: [empresaId], references: [id], onDelete: Cascade)
   marca              String?
   tipo               String                 // PLA, PETG, ABS, ASA, TPU, Resina
   cor                String
@@ -56,6 +103,8 @@ model Filament {
 
 model FilamentPriceHistory {
   id         String   @id @default(cuid())
+  empresaId  String
+  empresa    Empresa  @relation(fields: [empresaId], references: [id], onDelete: Cascade)
   filamentId String
   filament   Filament @relation(fields: [filamentId], references: [id], onDelete: Cascade)
   precoPorKg Float
@@ -64,6 +113,8 @@ model FilamentPriceHistory {
 
 model Tinta {
   id        String   @id @default(cuid())
+  empresaId String
+  empresa   Empresa  @relation(fields: [empresaId], references: [id], onDelete: Cascade)
   nome      String
   marca     String?
   tipo      String   // Acrílica, Spray, Primer, Verniz, Esmalte, Óleo, Pincel/Insumo
@@ -75,6 +126,8 @@ model Tinta {
 
 model Peca {
   id         String   @id @default(cuid())
+  empresaId  String
+  empresa    Empresa  @relation(fields: [empresaId], references: [id], onDelete: Cascade)
   nome       String
   descricao  String?
   categoria  String?
@@ -91,6 +144,8 @@ model Peca {
 
 model Pedido {
   id             String     @id @default(cuid())
+  empresaId      String
+  empresa        Empresa    @relation(fields: [empresaId], references: [id], onDelete: Cascade)
   clienteNome    String
   clienteContato String?    // telefone/whatsapp
   status         String     @default("pendente") // pendente | aguardando_pagamento | em_impressao | pintando | pronto | enviado | entregue | cancelado
@@ -156,16 +211,22 @@ model SolicitacaoExclusao {
 }
 
 model Configuracao {
-  id        String   @id @default("global")
+  id        String   @id @default(cuid())
+  empresaId String   @unique
+  empresa   Empresa  @relation(fields: [empresaId], references: [id], onDelete: Cascade)
   chavePix  String?
   updatedAt DateTime @updatedAt
 }
 
 model Cupom {
   id                 String    @id @default(cuid())
-  codigo             String    @unique
+  empresaId          String
+  empresa            Empresa   @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  codigo             String
   percentualDesconto Float
   ativo              Boolean   @default(true)
   validoAte          DateTime?
   createdAt          DateTime  @default(now())
+
+  @@unique([empresaId, codigo])
 }

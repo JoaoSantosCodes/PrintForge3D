@@ -2,6 +2,8 @@
 
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
+import { getEmpresaIdAtual } from "@/lib/auth-server";
+import { checkPlanLimit } from "@/lib/plan-limits";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
@@ -49,7 +51,6 @@ export async function uploadFotoToSupabase(file: File): Promise<string | null> {
 
     if (uploadError) {
       console.warn("Aviso ao fazer upload no Supabase Storage (tentando fallback local/dataUrl):", uploadError.message);
-      // Fallback: convert file to Base64 Data URL so images display even if Supabase bucket isn't set up yet
       const arrayBuffer = await file.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
       return `data:${file.type};base64,${buffer.toString("base64")}`;
@@ -67,6 +68,8 @@ export async function uploadFotoToSupabase(file: File): Promise<string | null> {
 
 export async function savePecaAction(formData: FormData) {
   try {
+    const empresaId = await getEmpresaIdAtual();
+
     const pecaId = formData.get("id") as string | null;
     const fotoFile = formData.get("fotoFile") as File | null;
     let fotoUrl = (formData.get("fotoUrl") as string) || null;
@@ -106,7 +109,14 @@ export async function savePecaAction(formData: FormData) {
     let peca;
 
     if (v.id) {
-      // Edit mode
+      // Edit mode - verify ownership
+      const existing = await prisma.peca.findFirst({
+        where: { id: v.id, empresaId },
+      });
+      if (!existing) {
+        return { error: "Peça não encontrada ou acesso não autorizado." };
+      }
+
       peca = await prisma.peca.update({
         where: { id: v.id },
         data: {
@@ -163,9 +173,15 @@ export async function savePecaAction(formData: FormData) {
         },
       });
     } else {
-      // Create mode
+      // Create mode - verify plan limit
+      const limitCheck = await checkPlanLimit(empresaId, "pecas");
+      if (!limitCheck.allowed) {
+        return { error: limitCheck.message };
+      }
+
       peca = await prisma.peca.create({
         data: {
+          empresaId,
           nome: v.nome,
           descricao: v.descricao,
           categoria: v.categoria,
@@ -198,19 +214,17 @@ export async function savePecaAction(formData: FormData) {
       });
     }
 
-    // Increment printer accumulated print hours for maintenance tracking
     if (v.printerId && v.tempoHorasImpressao > 0) {
-      await prisma.printer.update({
-        where: { id: v.printerId },
+      await prisma.printer.updateMany({
+        where: { id: v.printerId, empresaId },
         data: {
           horasUsoAcumuladas: { increment: v.tempoHorasImpressao },
         },
       }).catch(() => {});
     }
 
-    // Automatically deduct filament stock
     if (v.filamentId && v.pesoGramas > 0) {
-      const fil = await prisma.filament.findUnique({ where: { id: v.filamentId } });
+      const fil = await prisma.filament.findFirst({ where: { id: v.filamentId, empresaId } });
       if (fil) {
         const novoPeso = Math.max(0, fil.pesoRestanteGramas - v.pesoGramas);
         await prisma.filament.update({
@@ -223,8 +237,6 @@ export async function savePecaAction(formData: FormData) {
     revalidatePath("/admin");
     revalidatePath("/admin/pecas");
     revalidatePath("/admin/filamentos");
-    revalidatePath("/catalogo");
-    revalidatePath(`/catalogo/${peca.id}`);
     return { success: true, pecaId: peca.id };
   } catch (err: any) {
     console.error("Erro ao salvar peça:", err);
@@ -237,13 +249,15 @@ export async function savePecaAction(formData: FormData) {
 
 export async function togglePublicacaoAction(id: string, publicada: boolean) {
   try {
+    const empresaId = await getEmpresaIdAtual();
+    const existing = await prisma.peca.findFirst({ where: { id, empresaId } });
+    if (!existing) return { error: "Peça não encontrada ou acesso não autorizado." };
+
     await prisma.peca.update({
       where: { id },
       data: { publicada },
     });
     revalidatePath("/admin/pecas");
-    revalidatePath("/catalogo");
-    revalidatePath(`/catalogo/${id}`);
     return { success: true };
   } catch (err: any) {
     return { error: err?.message || "Erro ao alterar visibilidade pública." };
@@ -252,6 +266,10 @@ export async function togglePublicacaoAction(id: string, publicada: boolean) {
 
 export async function updateStatusAction(id: string, status: string) {
   try {
+    const empresaId = await getEmpresaIdAtual();
+    const existing = await prisma.peca.findFirst({ where: { id, empresaId } });
+    if (!existing) return { error: "Peça não encontrada ou acesso não autorizado." };
+
     await prisma.peca.update({
       where: { id },
       data: { status },
@@ -265,11 +283,14 @@ export async function updateStatusAction(id: string, status: string) {
 
 export async function deletePecaAction(id: string) {
   try {
+    const empresaId = await getEmpresaIdAtual();
+    const existing = await prisma.peca.findFirst({ where: { id, empresaId } });
+    if (!existing) return { error: "Peça não encontrada ou acesso não autorizado." };
+
     await prisma.peca.delete({
       where: { id },
     });
     revalidatePath("/admin/pecas");
-    revalidatePath("/catalogo");
     return { success: true };
   } catch (err: any) {
     return { error: err?.message || "Erro ao excluir peça." };
@@ -278,8 +299,9 @@ export async function deletePecaAction(id: string) {
 
 export async function duplicarPecaAction(id: string) {
   try {
-    const original = await prisma.peca.findUnique({
-      where: { id },
+    const empresaId = await getEmpresaIdAtual();
+    const original = await prisma.peca.findFirst({
+      where: { id, empresaId },
       include: {
         custoImpressao: true,
         custoPintura: true,
@@ -293,6 +315,7 @@ export async function duplicarPecaAction(id: string) {
 
     const novaPeca = await prisma.peca.create({
       data: {
+        empresaId,
         nome: `${original.nome} (cópia)`,
         descricao: original.descricao,
         categoria: original.categoria,

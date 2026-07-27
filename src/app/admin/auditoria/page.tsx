@@ -1,14 +1,16 @@
 import { prisma } from "@/lib/prisma";
+import { getEmpresaIdAtual } from "@/lib/auth-server";
 import { AuditoriaClient } from "./auditoria-client";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminAuditoriaPage() {
+  const empresaId = await getEmpresaIdAtual();
   const auditLogs = await prisma.auditLog.findMany({
+    where: { empresaId },
     orderBy: { createdAt: "desc" },
   });
 
-  // Collect all unique profile IDs needed for joins
   const profileIds = new Set<string>();
   auditLogs.forEach((log) => {
     if (log.adminId) profileIds.add(log.adminId);

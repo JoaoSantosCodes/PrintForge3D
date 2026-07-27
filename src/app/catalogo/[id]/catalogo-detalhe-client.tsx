@@ -43,6 +43,8 @@ interface CatalogoDetalheClientProps {
     email: string;
   } | null;
   avaliacoes?: AvaliacaoItem[];
+  empresaSlug?: string;
+  empresaNome?: string;
 }
 
 export function CatalogoDetalheClient({
@@ -50,6 +52,8 @@ export function CatalogoDetalheClient({
   isLoggedIn,
   userProfile,
   avaliacoes = [],
+  empresaSlug,
+  empresaNome,
 }: CatalogoDetalheClientProps) {
   const router = useRouter();
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);

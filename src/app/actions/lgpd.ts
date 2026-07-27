@@ -1,6 +1,6 @@
 "use server";
 
-import { getCurrentProfile } from "@/lib/auth-server";
+import { getCurrentProfile, getEmpresaIdAtualOptional } from "@/lib/auth-server";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 
@@ -90,23 +90,28 @@ export async function requestAccountDeletionAction(motivo?: string) {
 export async function resolveDeletionRequestAction(requestId: string, status: "concluido" | "rejeitado") {
   try {
     const profile = await getCurrentProfile();
-    if (!profile || profile.role !== "admin") {
+    if (!profile || (profile.role !== "admin" && profile.role !== "super_admin")) {
       return { error: "Acesso restrito a administradores." };
     }
+
+    const empresaId = await getEmpresaIdAtualOptional();
 
     const req = await prisma.solicitacaoExclusao.update({
       where: { id: requestId },
       data: { status },
     });
 
-    await prisma.auditLog.create({
-      data: {
-        adminId: profile.id,
-        acao: status === "concluido" ? "concluiu_solicitacao_exclusao" : "rejeitou_solicitacao_exclusao",
-        alvoId: req.usuarioId,
-        detalhes: `Solicitação de exclusão para ${req.email} foi marcada como ${status}.`,
-      },
-    });
+    if (empresaId) {
+      await prisma.auditLog.create({
+        data: {
+          empresaId,
+          adminId: profile.id,
+          acao: status === "concluido" ? "concluiu_solicitacao_exclusao" : "rejeitou_solicitacao_exclusao",
+          alvoId: req.usuarioId,
+          detalhes: `Solicitação de exclusão para ${req.email} foi marcada como ${status}.`,
+        },
+      });
+    }
 
     revalidatePath("/admin/usuarios");
     return { success: true };

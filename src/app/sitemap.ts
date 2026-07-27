@@ -4,22 +4,41 @@ import { prisma } from "@/lib/prisma";
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://print-forge3-d-six.vercel.app";
 
-  let pecas: { id: string; createdAt: Date }[] = [];
+  let empresas: { slug: string; pecas: { id: string; createdAt: Date }[] }[] = [];
   try {
-    pecas = await prisma.peca.findMany({
-      where: { publicada: true },
-      select: { id: true, createdAt: true },
+    empresas = await prisma.empresa.findMany({
+      where: { status: { in: ["ativo", "trial"] } },
+      select: {
+        slug: true,
+        pecas: {
+          where: { publicada: true },
+          select: { id: true, createdAt: true },
+        },
+      },
     });
   } catch (err) {
-    console.warn("Erro ao buscar peças para sitemap:", err);
+    console.warn("Erro ao buscar empresas para sitemap:", err);
   }
 
-  const pecasUrls: MetadataRoute.Sitemap = pecas.map((p) => ({
-    url: `${baseUrl}/catalogo/${p.id}`,
-    lastModified: p.createdAt,
-    changeFrequency: "weekly",
-    priority: 0.8,
-  }));
+  const lojasUrls: MetadataRoute.Sitemap = [];
+
+  empresas.forEach((emp) => {
+    lojasUrls.push({
+      url: `${baseUrl}/loja/${emp.slug}`,
+      lastModified: new Date(),
+      changeFrequency: "daily",
+      priority: 0.9,
+    });
+
+    emp.pecas.forEach((p) => {
+      lojasUrls.push({
+        url: `${baseUrl}/loja/${emp.slug}/${p.id}`,
+        lastModified: p.createdAt,
+        changeFrequency: "weekly",
+        priority: 0.8,
+      });
+    });
+  });
 
   const staticUrls: MetadataRoute.Sitemap = [
     {
@@ -29,9 +48,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 1.0,
     },
     {
-      url: `${baseUrl}/catalogo`,
+      url: `${baseUrl}/criar-loja`,
       lastModified: new Date(),
-      changeFrequency: "daily",
+      changeFrequency: "weekly",
       priority: 0.9,
     },
     {
@@ -48,5 +67,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   ];
 
-  return [...staticUrls, ...pecasUrls];
+  return [...staticUrls, ...lojasUrls];
 }

@@ -17,6 +17,7 @@ import {
   User,
   FileText,
   Ticket,
+  CreditCard,
   Settings,
   Menu,
   X,
@@ -98,6 +99,7 @@ export function Sidebar() {
     {
       title: "GESTÃO & SISTEMA",
       items: [
+        { label: "Meu Plano / Assinatura", href: "/admin/assinatura", icon: CreditCard },
         { label: "Usuários", href: "/admin/usuarios", icon: Users, badge: pendingUsersCount > 0 ? `🔴 ${pendingUsersCount}` : null },
         { label: "Auditoria", href: "/admin/auditoria", icon: FileText },
         { label: "Configurações", href: "/admin/configuracoes", icon: Settings },

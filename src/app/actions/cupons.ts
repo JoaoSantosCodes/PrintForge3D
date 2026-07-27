@@ -1,15 +1,16 @@
 "use server";
 
-import { getCurrentProfile } from "@/lib/auth-server";
+import { getCurrentProfile, getEmpresaIdAtual } from "@/lib/auth-server";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 
 export async function createCupomAction(formData: FormData) {
   try {
     const profile = await getCurrentProfile();
-    if (!profile || profile.role !== "admin") {
+    if (!profile || (profile.role !== "admin" && profile.role !== "super_admin")) {
       return { error: "Acesso restrito a administradores." };
     }
+    const empresaId = await getEmpresaIdAtual();
 
     const codigo = (formData.get("codigo") as string || "").trim().toUpperCase();
     const percentualDesconto = parseFloat(formData.get("percentualDesconto") as string || "0");
@@ -22,17 +23,18 @@ export async function createCupomAction(formData: FormData) {
       return { error: "O percentual de desconto deve estar entre 1% e 100%." };
     }
 
-    const existing = await prisma.cupom.findUnique({
-      where: { codigo },
+    const existing = await prisma.cupom.findFirst({
+      where: { codigo, empresaId },
     });
     if (existing) {
-      return { error: "Já existe um cupom cadastrado com este código." };
+      return { error: "Já existe um cupom cadastrado com este código nesta empresa." };
     }
 
     const validoAte = validoAteStr ? new Date(validoAteStr) : null;
 
     const cupom = await prisma.cupom.create({
       data: {
+        empresaId,
         codigo,
         percentualDesconto,
         validoAte,
@@ -42,6 +44,7 @@ export async function createCupomAction(formData: FormData) {
 
     await prisma.auditLog.create({
       data: {
+        empresaId,
         adminId: profile.id,
         acao: "criou_cupom",
         detalhes: `Cupom ${codigo} de ${percentualDesconto}% de desconto criado.`,
@@ -58,11 +61,12 @@ export async function createCupomAction(formData: FormData) {
 export async function toggleCupomAction(id: string) {
   try {
     const profile = await getCurrentProfile();
-    if (!profile || profile.role !== "admin") {
+    if (!profile || (profile.role !== "admin" && profile.role !== "super_admin")) {
       return { error: "Acesso restrito a administradores." };
     }
+    const empresaId = await getEmpresaIdAtual();
 
-    const current = await prisma.cupom.findUnique({ where: { id } });
+    const current = await prisma.cupom.findFirst({ where: { id, empresaId } });
     if (!current) return { error: "Cupom não encontrado." };
 
     const cupom = await prisma.cupom.update({
@@ -80,9 +84,13 @@ export async function toggleCupomAction(id: string) {
 export async function deleteCupomAction(id: string) {
   try {
     const profile = await getCurrentProfile();
-    if (!profile || profile.role !== "admin") {
+    if (!profile || (profile.role !== "admin" && profile.role !== "super_admin")) {
       return { error: "Acesso restrito a administradores." };
     }
+    const empresaId = await getEmpresaIdAtual();
+
+    const current = await prisma.cupom.findFirst({ where: { id, empresaId } });
+    if (!current) return { error: "Cupom não encontrado." };
 
     await prisma.cupom.delete({ where: { id } });
 
@@ -93,13 +101,18 @@ export async function deleteCupomAction(id: string) {
   }
 }
 
-export async function validarCupomAction(codigo: string) {
+export async function validarCupomAction(codigo: string, empresaId?: string) {
   try {
     const codeClean = (codigo || "").trim().toUpperCase();
     if (!codeClean) return { error: "Informe o código do cupom." };
 
-    const cupom = await prisma.cupom.findUnique({
-      where: { codigo: codeClean },
+    const whereCondition: any = { codigo: codeClean };
+    if (empresaId) {
+      whereCondition.empresaId = empresaId;
+    }
+
+    const cupom = await prisma.cupom.findFirst({
+      where: whereCondition,
     });
 
     if (!cupom || !cupom.ativo) {

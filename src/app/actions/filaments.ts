@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { getEmpresaIdAtual } from "@/lib/auth-server";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
@@ -14,6 +15,8 @@ const filamentSchema = z.object({
 
 export async function createFilamentAction(formData: FormData) {
   try {
+    const empresaId = await getEmpresaIdAtual();
+
     const rawData = {
       marca: formData.get("marca") || null,
       tipo: formData.get("tipo"),
@@ -26,6 +29,7 @@ export async function createFilamentAction(formData: FormData) {
 
     await prisma.filament.create({
       data: {
+        empresaId,
         marca: validated.marca,
         tipo: validated.tipo,
         cor: validated.cor,
@@ -47,6 +51,8 @@ export async function createFilamentAction(formData: FormData) {
 
 export async function updateFilamentAction(id: string, formData: FormData) {
   try {
+    const empresaId = await getEmpresaIdAtual();
+
     const rawData = {
       marca: formData.get("marca") || null,
       tipo: formData.get("tipo"),
@@ -57,10 +63,18 @@ export async function updateFilamentAction(id: string, formData: FormData) {
 
     const validated = filamentSchema.parse(rawData);
 
-    const existing = await prisma.filament.findUnique({ where: { id } });
-    if (existing && existing.precoPorKg !== validated.precoPorKg) {
+    const existing = await prisma.filament.findFirst({
+      where: { id, empresaId },
+    });
+
+    if (!existing) {
+      return { error: "Filamento não encontrado ou acesso não autorizado." };
+    }
+
+    if (existing.precoPorKg !== validated.precoPorKg) {
       await prisma.filamentPriceHistory.create({
         data: {
+          empresaId,
           filamentId: id,
           precoPorKg: existing.precoPorKg,
         },
@@ -90,6 +104,16 @@ export async function updateFilamentAction(id: string, formData: FormData) {
 
 export async function deleteFilamentAction(id: string) {
   try {
+    const empresaId = await getEmpresaIdAtual();
+
+    const existing = await prisma.filament.findFirst({
+      where: { id, empresaId },
+    });
+
+    if (!existing) {
+      return { error: "Filamento não encontrado ou acesso não autorizado." };
+    }
+
     await prisma.filament.delete({
       where: { id },
     });
@@ -102,7 +126,9 @@ export async function deleteFilamentAction(id: string) {
 
 export async function getLowStockCountAction() {
   try {
+    const empresaId = await getEmpresaIdAtual();
     const filaments = await prisma.filament.findMany({
+      where: { empresaId },
       select: { pesoRestanteGramas: true },
     });
     const lowStockCount = filaments.filter(

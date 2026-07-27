@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { Plus, Edit2, Trash2, Boxes, Palette, Tag, DollarSign } from "lucide-react";
+import { Plus, Edit2, Trash2, Boxes, Palette } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { Badge } from "@/components/ui/badge";
@@ -11,7 +11,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { formatarMoeda } from "@/lib/custos";
 import { createFilamentAction, updateFilamentAction, deleteFilamentAction } from "@/app/actions/filaments";
 
-export default function FilamentsClientPage({ initialFilaments }: { initialFilaments: any[] }) {
+export default function FilamentosClientPage({ initialFilaments }: { initialFilaments: any[] }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingFilament, setEditingFilament] = useState<any | null>(null);
   const [deletingFilament, setDeletingFilament] = useState<any | null>(null);

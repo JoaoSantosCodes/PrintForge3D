@@ -1,14 +1,16 @@
 import { prisma } from "@/lib/prisma";
+import { getEmpresaIdAtual } from "@/lib/auth-server";
 import { formatarMoeda, calcularCustoPeca } from "@/lib/custos";
 import { FinancialChart } from "@/components/admin/financial-chart";
-import { Box, Printer, Boxes, TrendingUp, DollarSign, Globe, Plus, Layers, Palette, ShoppingBag, Clock, Users } from "lucide-react";
+import { Printer, Boxes, TrendingUp, DollarSign, Plus, Layers, Palette, ShoppingBag, Clock, Users } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminDashboardPage() {
-  // Fetch stats from Prisma safely
+  const empresaId = await getEmpresaIdAtual();
+
   let totalPecas = 0;
   let totalImpressoras = 0;
   let totalFilamentos = 0;
@@ -36,15 +38,16 @@ export default async function AdminDashboardPage() {
       fetchedPecas,
       fetchedPedidos,
     ] = await Promise.all([
-      prisma.peca.count(),
-      prisma.printer.count(),
-      prisma.filament.count(),
-      prisma.tinta.count(),
-      prisma.pedido.count({ where: { status: "pendente" } }),
-      prisma.pedido.count({ where: { status: { in: ["em_impressao", "pintando"] } } }),
-      prisma.pedido.count(),
-      prisma.profile.count({ where: { status: "pendente" } }),
+      prisma.peca.count({ where: { empresaId } }),
+      prisma.printer.count({ where: { empresaId } }),
+      prisma.filament.count({ where: { empresaId } }),
+      prisma.tinta.count({ where: { empresaId } }),
+      prisma.pedido.count({ where: { empresaId, status: "pendente" } }),
+      prisma.pedido.count({ where: { empresaId, status: { in: ["em_impressao", "pintando"] } } }),
+      prisma.pedido.count({ where: { empresaId } }),
+      prisma.profile.count({ where: { empresaId, status: "pendente" } }),
       prisma.peca.findMany({
+        where: { empresaId },
         include: {
           custoImpressao: true,
           custoPintura: true,
@@ -53,6 +56,7 @@ export default async function AdminDashboardPage() {
       }),
       prisma.pedido.findMany({
         where: {
+          empresaId,
           createdAt: { gte: thirtyDaysAgo },
         },
         include: {
@@ -81,9 +85,8 @@ export default async function AdminDashboardPage() {
     console.warn("Nenhum dado no banco ainda ou erro na busca:", err);
   }
 
-  // Fetch printers and filaments dictionary to calculate exact depreciation & material cost
-  const printers = await prisma.printer.findMany().catch(() => []);
-  const filaments = await prisma.filament.findMany().catch(() => []);
+  const printers = await prisma.printer.findMany({ where: { empresaId } }).catch(() => []);
+  const filaments = await prisma.filament.findMany({ where: { empresaId } }).catch(() => []);
 
   const printerMap = new Map(printers.map((p) => [p.id, p]));
   const filamentMap = new Map(filaments.map((f) => [f.id, f]));
@@ -105,14 +108,13 @@ export default async function AdminDashboardPage() {
       depreciacao: printer && imp ? { precoImpressora: printer.preco, vidaUtilHoras: printer.vidaUtilHoras, tempoHoras: imp.tempoHoras } : undefined,
       pintura: pin ? { tempoHoras: pin.tempoHoras, valorHoraMaoDeObra: pin.valorHoraMaoDeObra, custoTintas: pin.custoTintas } : undefined,
       embalagem: emb ? { custoUnitario: emb.custoUnitario } : undefined,
-      margemDesejadaPercentual: 100, // 100% margem padrão para estimativa de faturamento
+      margemDesejadaPercentual: 100,
     });
 
     custoTotalMes += custos.custoTotal;
     faturamentoSugeridoMes += custos.precoSugerido;
   });
 
-  // Calculate 30-day daily aggregated chart data
   const chartDataMap = new Map<string, { receita: number; custo: number }>();
   for (let i = 29; i >= 0; i--) {
     const d = new Date();
@@ -127,7 +129,6 @@ export default async function AdminDashboardPage() {
 
     const receita = (ped.precoAcordado || 0) * (ped.quantidade || 1);
     
-    // Calculate cost for piece in order
     let custoPecaUnitario = 0;
     if (ped.peca) {
       const imp = ped.peca.custoImpressao;
@@ -163,7 +164,6 @@ export default async function AdminDashboardPage() {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
-      {/* Header section */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-6">
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">
@@ -210,9 +210,7 @@ export default async function AdminDashboardPage() {
         </div>
       )}
 
-      {/* Financial & Order Metrics Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {/* Metric Card 1: Pedidos Pendentes (Âmbar - Alerta / Fluxo) */}
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 relative overflow-hidden group shadow-sm hover:shadow-md transition-all">
           <div className="flex items-center justify-between mb-3">
             <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
@@ -230,7 +228,6 @@ export default async function AdminDashboardPage() {
           </p>
         </div>
 
-        {/* Metric Card 2: Em Produção (Ciano - Equipamento / Operação) */}
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 relative overflow-hidden group shadow-sm hover:shadow-md transition-all">
           <div className="flex items-center justify-between mb-3">
             <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
@@ -248,7 +245,6 @@ export default async function AdminDashboardPage() {
           </p>
         </div>
 
-        {/* Metric Card 3: Custo Total de Produção (Rose - Saída Financeira / Custos) */}
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 relative overflow-hidden group shadow-sm hover:shadow-md transition-all">
           <div className="flex items-center justify-between mb-3">
             <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
@@ -266,7 +262,6 @@ export default async function AdminDashboardPage() {
           </p>
         </div>
 
-        {/* Metric Card 4: Lucro Estimado Total (Emerald - Resultado Financeiro) */}
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 relative overflow-hidden group shadow-sm hover:shadow-md transition-all">
           <div className="flex items-center justify-between mb-3">
             <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
@@ -285,12 +280,9 @@ export default async function AdminDashboardPage() {
         </div>
       </div>
 
-      {/* Financial Chart Section */}
       <FinancialChart data={chartData} />
 
-      {/* Quick Navigation Shortcut Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5">
-        {/* Shortcut 1: Pedidos & Kanban (Âmbar) */}
         <Link href="/admin/pedidos" className="block group">
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-amber-500/50 rounded-2xl p-5 transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-amber-500/5 hover:-translate-y-0.5">
             <div className="flex items-center justify-between mb-3">
@@ -308,7 +300,6 @@ export default async function AdminDashboardPage() {
           </div>
         </Link>
 
-        {/* Shortcut 2: Impressoras (Ciano) */}
         <Link href="/admin/impressoras" className="block group">
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-cyan-500/50 rounded-2xl p-5 transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-cyan-500/5 hover:-translate-y-0.5">
             <div className="flex items-center justify-between mb-3">
@@ -326,7 +317,6 @@ export default async function AdminDashboardPage() {
           </div>
         </Link>
 
-        {/* Shortcut 3: Filamentos & Resinas (Índigo) */}
         <Link href="/admin/filamentos" className="block group">
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-indigo-500/50 rounded-2xl p-5 transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-indigo-500/5 hover:-translate-y-0.5">
             <div className="flex items-center justify-between mb-3">
@@ -344,7 +334,6 @@ export default async function AdminDashboardPage() {
           </div>
         </Link>
 
-        {/* Shortcut 4: Tintas & Pintura (Pink) */}
         <Link href="/admin/tintas" className="block group">
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-pink-500/50 rounded-2xl p-5 transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-pink-500/5 hover:-translate-y-0.5">
             <div className="flex items-center justify-between mb-3">
@@ -362,7 +351,6 @@ export default async function AdminDashboardPage() {
           </div>
         </Link>
 
-        {/* Shortcut 5: Peças & Custos (Roxo) */}
         <Link href="/admin/pecas" className="block group">
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-purple-500/50 rounded-2xl p-5 transition-all duration-200 shadow-sm hover:shadow-lg hover:shadow-purple-500/5 hover:-translate-y-0.5">
             <div className="flex items-center justify-between mb-3">

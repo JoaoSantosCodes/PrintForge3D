@@ -7,7 +7,6 @@ import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { z } from "zod";
 
-// In-memory rate limiting map for login attempts (5 attempts per minute)
 const loginAttemptsMap = new Map<string, { count: number; resetTime: number }>();
 
 const cadastroSchema = z.object({
@@ -28,7 +27,6 @@ export async function cadastroAction(formData: FormData) {
 
     const supabase = await createClient();
 
-    // 1. Criar usuário no Supabase Auth
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email: v.email,
       password: v.password,
@@ -43,7 +41,6 @@ export async function cadastroAction(formData: FormData) {
 
     const authUserId = authData.user?.id || `user_${Date.now()}`;
 
-    // 2. Criar Profile no Prisma com role="usuario" e status="pendente"
     await prisma.profile.upsert({
       where: { email: v.email },
       create: {
@@ -58,7 +55,6 @@ export async function cadastroAction(formData: FormData) {
       },
     });
 
-    // Desconectar sessão automática se tiver sido iniciada pelo Supabase signUp
     await supabase.auth.signOut().catch(() => {});
 
     return {
@@ -83,7 +79,6 @@ export async function loginAction(formData: FormData) {
       return { error: "Email e senha são obrigatórios." };
     }
 
-    // 1. Rate Limiting Check (5 attempts / 60s)
     const now = Date.now();
     const userAttempt = loginAttemptsMap.get(email);
     if (userAttempt) {
@@ -108,7 +103,6 @@ export async function loginAction(formData: FormData) {
       }
     };
 
-    // 2. Autenticação estrita via Supabase Auth
     const supabase = await createClient();
     const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
       email,
@@ -131,7 +125,6 @@ export async function loginAction(formData: FormData) {
 
     const authUser = authData.user;
 
-    // 3. Verificação do Profile no Prisma DB
     let profile = await prisma.profile.findUnique({
       where: { email },
     }).catch(() => null);
@@ -164,9 +157,14 @@ export async function loginAction(formData: FormData) {
 
     loginAttemptsMap.delete(email);
 
-    const redirectUrl = profile.role === "admin"
-      ? (targetRedirect.startsWith("/admin") ? targetRedirect : "/admin")
-      : (targetRedirect || "/catalogo");
+    let redirectUrl = "/catalogo";
+    if (profile.role === "super_admin") {
+      redirectUrl = "/superadmin";
+    } else if (profile.role === "admin") {
+      redirectUrl = targetRedirect.startsWith("/admin") ? targetRedirect : "/admin";
+    } else {
+      redirectUrl = targetRedirect || "/pedidos";
+    }
 
     return { success: true, redirectUrl };
   } catch (globalErr: any) {
@@ -239,7 +237,6 @@ export async function atualizarPerfilAction(nome: string, newPassword?: string) 
 
     const nomeTrimmed = nome.trim();
 
-    // 1. Atualizar nome no Prisma
     await prisma.profile.updateMany({
       where: {
         OR: [{ id: user.id }, { email: user.email ? user.email.toLowerCase() : "" }],
@@ -247,12 +244,10 @@ export async function atualizarPerfilAction(nome: string, newPassword?: string) 
       data: { nome: nomeTrimmed },
     });
 
-    // 2. Atualizar user_metadata no Supabase Auth
     await supabase.auth.updateUser({
       data: { nome: nomeTrimmed },
     });
 
-    // 3. Atualizar senha se informada
     if (newPassword && newPassword.trim().length > 0) {
       if (newPassword.trim().length < 6) {
         return { error: "A nova senha deve ter no mínimo 6 caracteres." };

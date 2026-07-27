@@ -1,12 +1,15 @@
 import { prisma } from "@/lib/prisma";
-import FilamentsClientPage from "./filaments-client";
+import { getEmpresaIdAtual } from "@/lib/auth-server";
+import FilamentosClientPage from "./filamentos-client";
 
 export const dynamic = "force-dynamic";
 
 export default async function FilamentsPage() {
   let filaments: any[] = [];
   try {
+    const empresaId = await getEmpresaIdAtual();
     filaments = await prisma.filament.findMany({
+      where: { empresaId },
       include: {
         priceHistory: {
           orderBy: { data: "desc" },
@@ -18,5 +21,5 @@ export default async function FilamentsPage() {
     console.warn("Erro ao buscar filamentos:", err);
   }
 
-  return <FilamentsClientPage initialFilaments={filaments} />;
+  return <FilamentosClientPage initialFilaments={filaments} />;
 }

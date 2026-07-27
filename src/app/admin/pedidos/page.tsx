@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { getEmpresaIdAtual } from "@/lib/auth-server";
 import PedidosClientPage from "./pedidos-client";
 
 export const dynamic = "force-dynamic";
@@ -9,14 +10,18 @@ export default async function PedidosPage() {
   let config = null;
 
   try {
+    const empresaId = await getEmpresaIdAtual();
+
     const [fetchedPedidos, fetchedPecas, fetchedConfig] = await Promise.all([
       prisma.pedido.findMany({
+        where: { empresaId },
         include: {
           peca: true,
         },
         orderBy: { createdAt: "desc" },
       }),
       prisma.peca.findMany({
+        where: { empresaId },
         select: {
           id: true,
           nome: true,
@@ -24,7 +29,7 @@ export default async function PedidosPage() {
         },
         orderBy: { nome: "asc" },
       }),
-      prisma.configuracao.findUnique({ where: { id: "global" } }),
+      prisma.configuracao.findUnique({ where: { empresaId } }),
     ]);
 
     pedidos = fetchedPedidos;

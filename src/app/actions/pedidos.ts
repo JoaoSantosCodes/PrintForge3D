@@ -2,6 +2,8 @@
 
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
+import { getEmpresaIdAtual } from "@/lib/auth-server";
+import { checkPlanLimit } from "@/lib/plan-limits";
 import { enviarEmailMudancaStatus } from "@/lib/email";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -18,6 +20,13 @@ const pedidoSchema = z.object({
 
 export async function createPedidoAction(formData: FormData) {
   try {
+    const empresaId = await getEmpresaIdAtual();
+
+    const limitCheck = await checkPlanLimit(empresaId, "pedidos");
+    if (!limitCheck.allowed) {
+      return { error: limitCheck.message };
+    }
+
     const rawData = {
       clienteNome: formData.get("clienteNome"),
       clienteContato: formData.get("clienteContato") || null,
@@ -32,6 +41,7 @@ export async function createPedidoAction(formData: FormData) {
 
     await prisma.pedido.create({
       data: {
+        empresaId,
         clienteNome: validated.clienteNome,
         clienteContato: validated.clienteContato,
         pecaId: validated.pecaId,
@@ -55,6 +65,15 @@ export async function createPedidoAction(formData: FormData) {
 
 export async function updatePedidoStatusAction(id: string, newStatus: string) {
   try {
+    const empresaId = await getEmpresaIdAtual();
+
+    const existing = await prisma.pedido.findFirst({
+      where: { id, empresaId },
+    });
+    if (!existing) {
+      return { error: "Pedido não encontrado ou acesso não autorizado." };
+    }
+
     const updatedPedido = await prisma.pedido.update({
       where: { id },
       data: { status: newStatus },
@@ -91,6 +110,15 @@ export async function updatePedidoStatusAction(id: string, newStatus: string) {
 
 export async function updatePedidoAction(id: string, formData: FormData) {
   try {
+    const empresaId = await getEmpresaIdAtual();
+
+    const existing = await prisma.pedido.findFirst({
+      where: { id, empresaId },
+    });
+    if (!existing) {
+      return { error: "Pedido não encontrado ou acesso não autorizado." };
+    }
+
     const rawData = {
       clienteNome: formData.get("clienteNome"),
       clienteContato: formData.get("clienteContato") || null,
@@ -129,6 +157,15 @@ export async function updatePedidoAction(id: string, formData: FormData) {
 
 export async function deletePedidoAction(id: string) {
   try {
+    const empresaId = await getEmpresaIdAtual();
+
+    const existing = await prisma.pedido.findFirst({
+      where: { id, empresaId },
+    });
+    if (!existing) {
+      return { error: "Pedido não encontrado ou acesso não autorizado." };
+    }
+
     await prisma.pedido.delete({
       where: { id },
     });
@@ -142,6 +179,15 @@ export async function deletePedidoAction(id: string) {
 
 export async function confirmarPagamentoAction(pedidoId: string, pago: boolean = true) {
   try {
+    const empresaId = await getEmpresaIdAtual();
+
+    const existing = await prisma.pedido.findFirst({
+      where: { id: pedidoId, empresaId },
+    });
+    if (!existing) {
+      return { error: "Pedido não encontrado ou acesso não autorizado." };
+    }
+
     await prisma.pedido.update({
       where: { id: pedidoId },
       data: { pago },
@@ -194,7 +240,9 @@ export async function criarPedidoClienteAction(
 
     if (cupomCodigo) {
       const codeClean = cupomCodigo.trim().toUpperCase();
-      const cupom = await prisma.cupom.findUnique({ where: { codigo: codeClean } });
+      const cupom = await prisma.cupom.findFirst({
+        where: { codigo: codeClean, empresaId: peca.empresaId },
+      });
       if (cupom && cupom.ativo && (!cupom.validoAte || new Date() <= new Date(cupom.validoAte))) {
         cupomValido = cupom.codigo;
         if (precoFinalUnitario) {
@@ -208,6 +256,7 @@ export async function criarPedidoClienteAction(
 
     const novoPedido = await prisma.pedido.create({
       data: {
+        empresaId: peca.empresaId,
         clienteNome: profile.nome || profile.email,
         clienteContato: profile.email,
         usuarioId: profile.id,
@@ -308,8 +357,6 @@ export async function avaliarPedidoAction(pedidoId: string, nota: number, coment
     });
 
     revalidatePath("/pedidos");
-    revalidatePath(`/catalogo/${pedido.pecaId}`);
-    revalidatePath("/catalogo");
 
     return { success: true, message: "Obrigado por sua avaliação!" };
   } catch (err: any) {

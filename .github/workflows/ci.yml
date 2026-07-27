@@ -29,5 +29,8 @@ jobs:
       - name: Run Vitest Unit Tests
         run: npm run test
 
+      - name: Run Multi-tenant Isolation Tests
+        run: npm run test:tenant
+
       - name: Build Next.js Production App
         run: npm run build

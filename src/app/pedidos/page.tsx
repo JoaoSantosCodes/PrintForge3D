@@ -13,10 +13,6 @@ export default async function PedidosUsuarioPage() {
     redirect("/login?error=Sua conta precisa estar aprovada por um administrador para visualizar seus pedidos.");
   }
 
-  const config = await prisma.configuracao.findUnique({
-    where: { id: "global" },
-  });
-
   const pedidos = await prisma.pedido.findMany({
     where: {
       OR: [
@@ -33,6 +29,12 @@ export default async function PedidosUsuarioPage() {
       status: true,
       observacoes: true,
       createdAt: true,
+      empresa: {
+        select: {
+          nome: true,
+          slug: true,
+        },
+      },
       peca: {
         select: {
           id: true,
@@ -61,6 +63,7 @@ export default async function PedidosUsuarioPage() {
     status: p.status,
     observacoes: p.observacoes,
     createdAt: p.createdAt.toISOString(),
+    empresa: p.empresa,
     peca: p.peca,
     avaliacao: p.avaliacao,
   }));
@@ -69,7 +72,7 @@ export default async function PedidosUsuarioPage() {
     <div className="min-h-screen bg-slate-950 text-slate-100 selection:bg-teal-500 selection:text-slate-950">
       <PublicNavbar />
       <main className="p-6 sm:p-12">
-        <PedidosUsuarioClient pedidos={formattedPedidos} chavePix={config?.chavePix || null} />
+        <PedidosUsuarioClient pedidos={formattedPedidos} />
       </main>
     </div>
   );

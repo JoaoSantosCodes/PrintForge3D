@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { getEmpresaIdAtual } from "@/lib/auth-server";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
@@ -15,6 +16,8 @@ const tintaSchema = z.object({
 
 export async function createTintaAction(formData: FormData) {
   try {
+    const empresaId = await getEmpresaIdAtual();
+
     const rawData = {
       nome: formData.get("nome"),
       marca: formData.get("marca") || null,
@@ -28,6 +31,7 @@ export async function createTintaAction(formData: FormData) {
 
     await prisma.tinta.create({
       data: {
+        empresaId,
         nome: validated.nome,
         marca: validated.marca,
         tipo: validated.tipo,
@@ -50,6 +54,8 @@ export async function createTintaAction(formData: FormData) {
 
 export async function updateTintaAction(id: string, formData: FormData) {
   try {
+    const empresaId = await getEmpresaIdAtual();
+
     const rawData = {
       nome: formData.get("nome"),
       marca: formData.get("marca") || null,
@@ -60,6 +66,13 @@ export async function updateTintaAction(id: string, formData: FormData) {
     };
 
     const validated = tintaSchema.parse(rawData);
+
+    const existing = await prisma.tinta.findFirst({
+      where: { id, empresaId },
+    });
+    if (!existing) {
+      return { error: "Tinta não encontrada ou acesso não autorizado." };
+    }
 
     await prisma.tinta.update({
       where: { id },
@@ -86,6 +99,15 @@ export async function updateTintaAction(id: string, formData: FormData) {
 
 export async function deleteTintaAction(id: string) {
   try {
+    const empresaId = await getEmpresaIdAtual();
+
+    const existing = await prisma.tinta.findFirst({
+      where: { id, empresaId },
+    });
+    if (!existing) {
+      return { error: "Tinta não encontrada ou acesso não autorizado." };
+    }
+
     await prisma.tinta.delete({
       where: { id },
     });

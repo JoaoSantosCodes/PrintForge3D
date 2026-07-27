@@ -1,17 +1,18 @@
 "use server";
 
-import { getCurrentProfile } from "@/lib/auth-server";
+import { getCurrentProfile, getEmpresaIdAtual } from "@/lib/auth-server";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 
 export async function getConfiguracaoAction() {
   try {
+    const empresaId = await getEmpresaIdAtual();
     let config = await prisma.configuracao.findUnique({
-      where: { id: "global" },
+      where: { empresaId },
     });
     if (!config) {
       config = await prisma.configuracao.create({
-        data: { id: "global" },
+        data: { empresaId },
       });
     }
     return { success: true, config };
@@ -23,18 +24,20 @@ export async function getConfiguracaoAction() {
 export async function saveChavePixAction(chavePix: string) {
   try {
     const profile = await getCurrentProfile();
-    if (!profile || profile.role !== "admin") {
+    if (!profile || (profile.role !== "admin" && profile.role !== "super_admin")) {
       return { error: "Acesso restrito a administradores." };
     }
+    const empresaId = await getEmpresaIdAtual();
 
     const config = await prisma.configuracao.upsert({
-      where: { id: "global" },
-      create: { id: "global", chavePix: chavePix.trim() },
+      where: { empresaId },
+      create: { empresaId, chavePix: chavePix.trim() },
       update: { chavePix: chavePix.trim() },
     });
 
     await prisma.auditLog.create({
       data: {
+        empresaId,
         adminId: profile.id,
         acao: "atualizou_chave_pix",
         detalhes: `Chave PIX atualizada para: "${chavePix.trim()}"`,

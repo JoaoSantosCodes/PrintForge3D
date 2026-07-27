@@ -9,14 +9,56 @@ async function main() {
   await prisma.custoEmbalagem.deleteMany();
   await prisma.custoPintura.deleteMany();
   await prisma.custoImpressao.deleteMany();
+  await prisma.avaliacao.deleteMany();
+  await prisma.pedido.deleteMany();
   await prisma.peca.deleteMany();
   await prisma.tinta.deleteMany();
+  await prisma.filamentPriceHistory.deleteMany();
   await prisma.filament.deleteMany();
   await prisma.printer.deleteMany();
+  await prisma.cupom.deleteMany();
+  await prisma.configuracao.deleteMany();
+  await prisma.auditLog.deleteMany();
+  await prisma.profile.deleteMany();
+  await prisma.empresa.deleteMany();
+  await prisma.plano.deleteMany();
+
+  console.log("📦 Criando plano e empresa de teste...");
+  const planoLegado = await prisma.plano.create({
+    data: {
+      nome: "Legado",
+      slug: "legado",
+      precoMensal: 0,
+      limiteImpressoras: 999999,
+      limitePecas: 999999,
+      limitePedidosMes: 999999,
+      limiteUsuarios: 999999,
+      ativo: true,
+    },
+  });
+
+  const empresa = await prisma.empresa.create({
+    data: {
+      nome: "Minha Loja",
+      slug: "minha-loja",
+      planoId: planoLegado.id,
+      status: "ativo",
+    },
+  });
+
+  const empresaId = empresa.id;
+
+  await prisma.configuracao.create({
+    data: {
+      empresaId,
+      chavePix: "minhaloja@pix.com",
+    },
+  });
 
   console.log("🖨️ Cadastrando impressoras...");
   const p1 = await prisma.printer.create({
     data: {
+      empresaId,
       nome: "Bambu Lab X1 Carbon",
       modelo: "X1-Carbon Combo",
       consumoWatts: 350,
@@ -28,6 +70,7 @@ async function main() {
 
   const p2 = await prisma.printer.create({
     data: {
+      empresaId,
       nome: "Creality Ender 3 V3",
       modelo: "Ender 3 V3 SE",
       consumoWatts: 220,
@@ -39,6 +82,7 @@ async function main() {
 
   const p3 = await prisma.printer.create({
     data: {
+      empresaId,
       nome: "Elegoo Saturn (Resina)",
       modelo: "Saturn 3 Ultra 12K",
       consumoWatts: 120,
@@ -51,6 +95,7 @@ async function main() {
   console.log("🧶 Cadastrando filamentos e resinas...");
   const f1 = await prisma.filament.create({
     data: {
+      empresaId,
       marca: "3D Fila",
       tipo: "PLA",
       cor: "Branco",
@@ -60,6 +105,7 @@ async function main() {
 
   const f2 = await prisma.filament.create({
     data: {
+      empresaId,
       marca: "Voolt3D",
       tipo: "PETG",
       cor: "Preto",
@@ -69,6 +115,7 @@ async function main() {
 
   const f3 = await prisma.filament.create({
     data: {
+      empresaId,
       marca: "3D Fila",
       tipo: "ABS",
       cor: "Cinza",
@@ -78,6 +125,7 @@ async function main() {
 
   const f4 = await prisma.filament.create({
     data: {
+      empresaId,
       marca: "Voolt3D",
       tipo: "TPU",
       cor: "Transparente",
@@ -87,6 +135,7 @@ async function main() {
 
   const f5 = await prisma.filament.create({
     data: {
+      empresaId,
       marca: "Elegoo",
       tipo: "Resina",
       cor: "Cinza Padrão",
@@ -98,6 +147,7 @@ async function main() {
   await prisma.tinta.createMany({
     data: [
       {
+        empresaId,
         nome: "Primer Spray Cinza",
         marca: "Tekbond",
         tipo: "Primer",
@@ -106,6 +156,7 @@ async function main() {
         preco: 24.9,
       },
       {
+        empresaId,
         nome: "Tinta Acrílica Preta",
         marca: "Acrilex",
         tipo: "Acrílica",
@@ -114,6 +165,7 @@ async function main() {
         preco: 8.9,
       },
       {
+        empresaId,
         nome: "Tinta Acrílica Dourada",
         marca: "Acrilex",
         tipo: "Acrílica",
@@ -122,6 +174,7 @@ async function main() {
         preco: 9.9,
       },
       {
+        empresaId,
         nome: "Verniz Fosco Spray",
         marca: "Colorgin",
         tipo: "Verniz",
@@ -134,9 +187,9 @@ async function main() {
 
   console.log("🧩 Cadastrando peças com detalhamento de custos...");
 
-  // 1. Miniatura Dragão
   const peca1 = await prisma.peca.create({
     data: {
+      empresaId,
       nome: "Miniatura Dragão",
       descricao: "Miniatura detalhada de dragão místico com asas abertas e base ornamentada.",
       categoria: "Miniaturas",
@@ -168,9 +221,9 @@ async function main() {
     },
   });
 
-  // 2. Vaso Geométrico
   const peca2 = await prisma.peca.create({
     data: {
+      empresaId,
       nome: "Vaso Geométrico",
       descricao: "Vaso decorativo multifacetado estilo minimalista moderno para plantas secas ou suculentas.",
       categoria: "Decoração",
@@ -195,9 +248,9 @@ async function main() {
     },
   });
 
-  // 3. Suporte de Celular
   const peca3 = await prisma.peca.create({
     data: {
+      empresaId,
       nome: "Suporte de Celular Ergonomico",
       descricao: "Suporte ajustável para mesa compatível com smartphones e tablets até 11 polegadas.",
       categoria: "Utilitários",
@@ -216,14 +269,14 @@ async function main() {
     },
   });
 
-  // 4. Busto Guerreiro
   const peca4 = await prisma.peca.create({
     data: {
+      empresaId,
       nome: "Busto Guerreiro Nórdico",
       descricao: "Busto em alta definição impresso em resina 12K para colecionadores e pintura de fã.",
       categoria: "Miniaturas",
       fotoUrl: "https://images.unsplash.com/photo-1579783902614-a3fb3927b675?w=800&auto=format&fit=crop&q=80",
-      publicada: false, // em produção, ainda não publicada
+      publicada: false,
       status: "em_producao",
       custoImpressao: {
         create: {
@@ -254,6 +307,7 @@ async function main() {
   await prisma.pedido.createMany({
     data: [
       {
+        empresaId,
         clienteNome: "Carlos Eduardo Silva",
         clienteContato: "(11) 98765-4321",
         status: "pendente",
@@ -263,6 +317,7 @@ async function main() {
         observacoes: "Pintura realista no estilo Viking com acabamento fosco.",
       },
       {
+        empresaId,
         clienteNome: "Mariana Oliveira",
         clienteContato: "(21) 99123-8877",
         status: "em_impressao",
@@ -272,6 +327,7 @@ async function main() {
         observacoes: "Entregar em caixa presenteável com cartão de felicitações.",
       },
       {
+        empresaId,
         clienteNome: "Lucas Mendes",
         clienteContato: "(31) 98844-5566",
         status: "pintando",
@@ -281,6 +337,7 @@ async function main() {
         observacoes: "Detalhes em dourado nas asas do dragão.",
       },
       {
+        empresaId,
         clienteNome: "Arquitetura & Design Studio",
         clienteContato: "contato@arqstudio.com.br",
         status: "entregue",

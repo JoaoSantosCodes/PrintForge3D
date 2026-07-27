@@ -6,7 +6,13 @@ import { Search, Box, Sparkles, Filter, ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 
-export default function CatalogoClientPage({ pecas }: { pecas: any[] }) {
+export default function CatalogoClientPage({
+  pecas,
+  empresa,
+}: {
+  pecas: any[];
+  empresa?: { id: string; nome: string; slug: string; status: string };
+}) {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategoria, setSelectedCategoria] = useState<string>("todas");
   const [sortBy, setSortBy] = useState<"recente" | "nome" | "categoria">("recente");
@@ -131,7 +137,7 @@ export default function CatalogoClientPage({ pecas }: { pecas: any[] }) {
           {filteredPecas.map((peca) => (
             <Link
               key={peca.id}
-              href={`/catalogo/${peca.id}`}
+              href={empresa ? `/loja/${empresa.slug}/${peca.id}` : `/catalogo/${peca.id}`}
               className="group block bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden hover:border-teal-500/50 transition-all duration-300 shadow-md dark:shadow-xl hover:shadow-2xl hover:shadow-teal-500/10 flex flex-col justify-between"
             >
               <div>

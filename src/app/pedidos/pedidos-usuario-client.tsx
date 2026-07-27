@@ -16,6 +16,7 @@ import {
   Star,
   MessageSquare,
   AlertTriangle,
+  Store,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -41,6 +42,10 @@ interface PedidoUsuario {
   status: string;
   observacoes: string | null;
   createdAt: string;
+  empresa?: {
+    nome: string;
+    slug: string;
+  } | null;
   peca: {
     id: string;
     nome: string;
@@ -108,7 +113,6 @@ export function PedidosUsuarioClient({
   const [cancelModalPedidoId, setCancelModalPedidoId] = useState<string | null>(null);
   const [cancelling, setCancelling] = useState(false);
 
-  // Review states
   const [reviewModalPedido, setReviewModalPedido] = useState<PedidoUsuario | null>(null);
   const [nota, setNota] = useState<number>(5);
   const [comentario, setComentario] = useState<string>("");
@@ -143,32 +147,30 @@ export function PedidosUsuarioClient({
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-300 py-4 sm:py-6">
-      {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-6">
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight flex items-center gap-3">
             <ShoppingBag className="w-7 h-7 sm:w-8 sm:h-8 text-teal-500 dark:text-teal-400" /> Meus Pedidos & Encomendas
           </h1>
           <p className="text-slate-600 dark:text-slate-400 text-xs sm:text-sm mt-1">
-            Acompanhe o status em tempo real das suas peças na fila de produção da PrintForge 3D.
+            Acompanhe o status em tempo real das suas peças na fila de produção das lojas PrintForge 3D.
           </p>
         </div>
 
-        <Link href="/catalogo">
+        <Link href="/">
           <Button variant="primary" size="sm" className="w-full sm:w-auto">
-            <Sparkles className="w-4 h-4" /> Solicitar Novo Pedido
+            <Sparkles className="w-4 h-4" /> Fazer Novo Pedido
           </Button>
         </Link>
       </div>
 
-      {/* Orders List */}
       {pedidos.length === 0 ? (
         <EmptyState
           icon={ShoppingBag}
           title="Você ainda não possui pedidos"
-          description="Navegue pelo nosso catálogo de modelos 3D e faça sua primeira solicitação de impressão!"
-          actionLabel="Ver Catálogo de Peças"
-          actionHref="/catalogo"
+          description="Navegue pelas lojas do PrintForge 3D e faça sua primeira solicitação de impressão!"
+          actionLabel="Ir para a Página Inicial"
+          actionHref="/"
         />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -184,6 +186,20 @@ export function PedidosUsuarioClient({
                 className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 sm:p-6 space-y-4 shadow-lg dark:shadow-xl hover:border-slate-300 dark:hover:border-slate-700 transition-all flex flex-col justify-between"
               >
                 <div className="space-y-4">
+                  {/* Store Disambiguation Badge */}
+                  {pedido.empresa && (
+                    <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/80 pb-3">
+                      <Link
+                        href={`/loja/${pedido.empresa.slug}`}
+                        className="flex items-center gap-2 text-xs font-bold text-cyan-600 dark:text-cyan-400 hover:underline"
+                      >
+                        <Store className="w-4 h-4 text-cyan-500" />
+                        <span>Loja: {pedido.empresa.nome}</span>
+                      </Link>
+                      <span className="text-[10px] text-slate-400 font-mono">/loja/{pedido.empresa.slug}</span>
+                    </div>
+                  )}
+
                   {/* Status Banner */}
                   <div className={`p-3.5 rounded-2xl border flex items-center justify-between ${conf.color}`}>
                     <div className="flex items-center gap-2 font-bold text-xs">
@@ -224,7 +240,7 @@ export function PedidosUsuarioClient({
                     </div>
                   </div>
 
-                  {/* PIX Payment Banner if Pronto or Aguardando Pagamento */}
+                  {/* PIX Payment Banner */}
                   {(pedido.status === "pronto" || pedido.status === "aguardando_pagamento") && (
                     <div className="p-4 bg-teal-500/10 border border-teal-500/20 rounded-2xl space-y-3">
                       <div className="flex items-center justify-between">
@@ -243,33 +259,6 @@ export function PedidosUsuarioClient({
                           {pedido.cupomCodigo && <span className="ml-2 text-[10px] text-teal-400 font-mono">(Cupom {pedido.cupomCodigo} aplicado)</span>}
                         </p>
                       )}
-
-                      {chavePix && !pedido.pago && (
-                        <div className="space-y-2 pt-1 border-t border-teal-500/20">
-                          <p className="text-[11px] text-slate-400 font-medium">
-                            Chave PIX para pagamento:
-                          </p>
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="text"
-                              readOnly
-                              value={chavePix}
-                              className="flex-1 px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-teal-300 font-mono"
-                            />
-                            <Button
-                              variant="secondary"
-                              size="sm"
-                              className="text-xs shrink-0"
-                              onClick={() => {
-                                navigator.clipboard.writeText(chavePix);
-                                alert("Chave PIX copiada para a área de transferência!");
-                              }}
-                            >
-                              Copiar Chave PIX 📋
-                            </Button>
-                          </div>
-                        </div>
-                      )}
                     </div>
                   )}
 
@@ -279,7 +268,7 @@ export function PedidosUsuarioClient({
                     </div>
                   )}
 
-                  {/* Review Section if Delivered */}
+                  {/* Review Section */}
                   {isEntregue && (
                     <div className="pt-2 border-t border-slate-800/80">
                       {pedido.avaliacao ? (
@@ -310,7 +299,6 @@ export function PedidosUsuarioClient({
                   )}
                 </div>
 
-                {/* Footer Date & Actions */}
                 <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-500">
                   <span className="flex items-center gap-1.5">
                     <Calendar className="w-3.5 h-3.5 text-slate-600" /> Solicitado em:{" "}
@@ -338,7 +326,6 @@ export function PedidosUsuarioClient({
         </div>
       )}
 
-      {/* Cancel Order Confirmation Modal */}
       <Modal
         isOpen={!!cancelModalPedidoId}
         onClose={() => setCancelModalPedidoId(null)}
@@ -367,7 +354,6 @@ export function PedidosUsuarioClient({
         </div>
       </Modal>
 
-      {/* Post-Delivery Star Review Modal */}
       <Modal
         isOpen={!!reviewModalPedido}
         onClose={() => setReviewModalPedido(null)}

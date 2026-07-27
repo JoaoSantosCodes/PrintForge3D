@@ -1,25 +1,19 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { getCurrentProfile, getEmpresaIdAtual } from "@/lib/auth-server";
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
-async function getAdminIdFromSession() {
-  try {
-    const supabase = await createClient();
-    const { data } = await supabase.auth.getUser();
-    return data.user?.id || "admin-system";
-  } catch {
-    return "admin-system";
-  }
-}
-
 async function registrarAuditLog(acao: string, alvoId?: string, detalhes?: string) {
   try {
-    const adminId = await getAdminIdFromSession();
+    const profile = await getCurrentProfile();
+    if (!profile) return;
+    const empresaId = profile.empresaId || "";
     await prisma.auditLog.create({
       data: {
-        adminId,
+        empresaId,
+        adminId: profile.id,
         acao,
         alvoId,
         detalhes,
@@ -32,6 +26,12 @@ async function registrarAuditLog(acao: string, alvoId?: string, detalhes?: strin
 
 export async function aprovarUsuarioAction(id: string) {
   try {
+    const empresaId = await getEmpresaIdAtual();
+    const existing = await prisma.profile.findFirst({
+      where: { id, empresaId },
+    });
+    if (!existing) return { error: "Usuário não encontrado nesta empresa." };
+
     const targetUser = await prisma.profile.update({
       where: { id },
       data: {
@@ -57,6 +57,7 @@ export async function aprovarUsuarioAction(id: string) {
 
 export async function bloquearUsuarioAction(id: string) {
   try {
+    const empresaId = await getEmpresaIdAtual();
     const supabase = await createClient();
     const { data } = await supabase.auth.getUser();
     const currentUserId = data.user?.id;
@@ -65,14 +66,10 @@ export async function bloquearUsuarioAction(id: string) {
       return { error: "Você não pode bloquear seu próprio usuário administrador." };
     }
 
-    const currentAdminProfile = currentUserId
-      ? await prisma.profile.findUnique({ where: { id: currentUserId } })
-      : null;
-
-    const targetProfile = await prisma.profile.findUnique({ where: { id } });
-    if (currentAdminProfile && targetProfile && currentAdminProfile.email === targetProfile.email) {
-      return { error: "Você não pode bloquear seu próprio usuário administrador." };
-    }
+    const existing = await prisma.profile.findFirst({
+      where: { id, empresaId },
+    });
+    if (!existing) return { error: "Usuário não encontrado nesta empresa." };
 
     const targetUser = await prisma.profile.update({
       where: { id },
@@ -98,6 +95,12 @@ export async function bloquearUsuarioAction(id: string) {
 
 export async function reativarUsuarioAction(id: string) {
   try {
+    const empresaId = await getEmpresaIdAtual();
+    const existing = await prisma.profile.findFirst({
+      where: { id, empresaId },
+    });
+    if (!existing) return { error: "Usuário não encontrado nesta empresa." };
+
     const targetUser = await prisma.profile.update({
       where: { id },
       data: {
@@ -122,8 +125,9 @@ export async function reativarUsuarioAction(id: string) {
 
 export async function getPendingUsersCountAction() {
   try {
+    const empresaId = await getEmpresaIdAtual();
     const count = await prisma.profile.count({
-      where: { status: "pendente" },
+      where: { status: "pendente", empresaId },
     });
     return { count };
   } catch (err: any) {

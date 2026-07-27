@@ -1,6 +1,8 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { getEmpresaIdAtual } from "@/lib/auth-server";
+import { checkPlanLimit } from "@/lib/plan-limits";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
@@ -15,6 +17,13 @@ const printerSchema = z.object({
 
 export async function createPrinterAction(formData: FormData) {
   try {
+    const empresaId = await getEmpresaIdAtual();
+
+    const limitCheck = await checkPlanLimit(empresaId, "impressoras");
+    if (!limitCheck.allowed) {
+      return { error: limitCheck.message };
+    }
+
     const rawData = {
       nome: formData.get("nome"),
       modelo: formData.get("modelo") || null,
@@ -28,6 +37,7 @@ export async function createPrinterAction(formData: FormData) {
 
     await prisma.printer.create({
       data: {
+        empresaId,
         nome: validated.nome,
         modelo: validated.modelo,
         consumoWatts: validated.consumoWatts,
@@ -50,6 +60,8 @@ export async function createPrinterAction(formData: FormData) {
 
 export async function updatePrinterAction(id: string, formData: FormData) {
   try {
+    const empresaId = await getEmpresaIdAtual();
+
     const rawData = {
       nome: formData.get("nome"),
       modelo: formData.get("modelo") || null,
@@ -60,6 +72,14 @@ export async function updatePrinterAction(id: string, formData: FormData) {
     };
 
     const validated = printerSchema.parse(rawData);
+
+    // Garante que só atualiza se for da empresa atual
+    const existing = await prisma.printer.findFirst({
+      where: { id, empresaId },
+    });
+    if (!existing) {
+      return { error: "Impressora não encontrada ou acesso não autorizado." };
+    }
 
     await prisma.printer.update({
       where: { id },
@@ -85,6 +105,15 @@ export async function updatePrinterAction(id: string, formData: FormData) {
 
 export async function deletePrinterAction(id: string) {
   try {
+    const empresaId = await getEmpresaIdAtual();
+
+    const existing = await prisma.printer.findFirst({
+      where: { id, empresaId },
+    });
+    if (!existing) {
+      return { error: "Impressora não encontrada ou acesso não autorizado." };
+    }
+
     await prisma.printer.delete({
       where: { id },
     });
@@ -97,6 +126,15 @@ export async function deletePrinterAction(id: string) {
 
 export async function registrarManutencaoAction(id: string) {
   try {
+    const empresaId = await getEmpresaIdAtual();
+
+    const existing = await prisma.printer.findFirst({
+      where: { id, empresaId },
+    });
+    if (!existing) {
+      return { error: "Impressora não encontrada ou acesso não autorizado." };
+    }
+
     await prisma.printer.update({
       where: { id },
       data: {

@@ -8,9 +8,12 @@
     "start": "next start",
     "lint": "next lint",
     "test": "vitest run",
+    "test:tenant": "vitest run src/lib/__tests__/isolamento-multiempresa.test.ts",
     "seed": "npx tsx prisma/seed.ts",
     "seed:admin": "npx tsx prisma/seed-admin.ts",
-    "db:reset": "prisma db push --force-reset && npx tsx prisma/seed.ts && npx tsx prisma/seed-admin.ts",
+    "seed:superadmin": "npx tsx prisma/seed-superadmin.ts",
+    "seed:multi-tenant": "npx tsx prisma/seed-multi-tenant.ts",
+    "db:reset": "prisma db push --force-reset && npx tsx prisma/seed.ts && npx tsx prisma/seed-admin.ts && npx tsx prisma/seed-superadmin.ts",
     "postinstall": "prisma generate"
   },
   "prisma": {

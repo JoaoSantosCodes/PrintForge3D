@@ -9,7 +9,7 @@ import { ConfirmDeleteModal } from "@/components/admin/confirm-delete-modal";
 import { formatarMoeda } from "@/lib/custos";
 import { createPrinterAction, updatePrinterAction, deletePrinterAction, registrarManutencaoAction } from "@/app/actions/printers";
 
-export default function PrintersClientPage({ initialPrinters }: { initialPrinters: any[] }) {
+export default function ImpressorasClientPage({ initialPrinters }: { initialPrinters: any[] }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPrinter, setEditingPrinter] = useState<any | null>(null);
   const [deletingPrinter, setDeletingPrinter] = useState<any | null>(null);
@@ -191,6 +191,7 @@ export default function PrintersClientPage({ initialPrinters }: { initialPrinter
                           <button
                             onClick={async () => {
                               await registrarManutencaoAction(printer.id);
+                              toast.success("Manutenção preventiva registrada!");
                             }}
                             className="w-full py-1.5 px-2 bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 rounded-xl text-[11px] font-semibold flex items-center justify-center gap-1.5 transition-colors border border-slate-300 dark:border-slate-700/60"
                           >
