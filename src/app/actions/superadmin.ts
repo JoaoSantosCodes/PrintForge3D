@@ -171,6 +171,82 @@ export async function deletePlanoAction(id: string) {
 }
 
 // 5. GESTÃO DE USUÁRIOS (SUPER-ADMIN)
+
+export async function criarUsuarioSuperAdminAction(formData: FormData) {
+  try {
+    await verifySuperAdmin();
+
+    const nome = (formData.get("nome") as string || "").trim();
+    const email = (formData.get("email") as string || "").trim().toLowerCase();
+    const password = (formData.get("password") as string || "").trim();
+    const role = (formData.get("role") as string || "admin");
+    const status = (formData.get("status") as string || "aprovado");
+    const empresaId = (formData.get("empresaId") as string || "").trim();
+
+    if (!email || !email.includes("@")) {
+      return { error: "Informe um e-mail válido." };
+    }
+
+    if (!password || password.length < 6) {
+      return { error: "A senha deve ter no mínimo 6 caracteres." };
+    }
+
+    // Verificar se já existe perfil com este e-mail
+    const existing = await prisma.profile.findUnique({ where: { email } });
+    if (existing) {
+      return { error: "Já existe um usuário cadastrado com este e-mail." };
+    }
+
+    let authUserId = `user_${Date.now()}`;
+
+    // Provisionar no Supabase Auth via Service Role se disponível
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (supabaseUrl && serviceRoleKey && !supabaseUrl.includes("placeholder")) {
+      try {
+        const { createClient: createAdminClient } = await import("@supabase/supabase-js");
+        const supabaseAdmin = createAdminClient(supabaseUrl, serviceRoleKey, {
+          auth: { autoRefreshToken: false, persistSession: false },
+        });
+
+        const { data: created, error: createError } = await supabaseAdmin.auth.admin.createUser({
+          email,
+          password,
+          email_confirm: true,
+          user_metadata: { nome: nome || email.split("@")[0] },
+        });
+
+        if (created?.user) {
+          authUserId = created.user.id;
+        } else if (createError) {
+          console.warn("Aviso ao criar no Supabase Auth:", createError.message);
+        }
+      } catch (authErr) {
+        console.warn("Erro ao comunicar com Supabase Auth Admin:", authErr);
+      }
+    }
+
+    const profile = await prisma.profile.create({
+      data: {
+        id: authUserId,
+        email,
+        nome: nome || email.split("@")[0],
+        role,
+        status,
+        empresaId: empresaId ? empresaId : null,
+        aprovadoEm: status === "aprovado" ? new Date() : null,
+      },
+    });
+
+    revalidatePath("/superadmin/usuarios");
+    revalidatePath("/superadmin");
+    return { success: true, message: `Usuário ${profile.email} criado com sucesso!` };
+  } catch (err: any) {
+    return { error: err?.message || "Erro ao criar usuário pelo Super-Admin." };
+  }
+}
+
 export async function aprovarUsuarioSuperAdminAction(id: string) {
   try {
     await verifySuperAdmin();
