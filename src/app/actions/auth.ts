@@ -110,24 +110,69 @@ export async function loginAction(formData: FormData) {
     const isSystemSuperAdmin = email === "superadmin@printforge3d.com" || (envSuperAdmin !== "" && email === envSuperAdmin);
 
     const supabase = await createClient();
-    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+    let { data: authData, error: authError } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
     let authUser = authData?.user || null;
 
-    // Fallback for system accounts if Supabase Auth credentials or network is offline
+    // Automatic provisioning for system admin & superadmin via Service Role Key if credentials mismatch in Supabase Auth
     if (!authUser && (isSystemAdmin || isSystemSuperAdmin)) {
       const validAdminPwd = process.env.ADMIN_PASSWORD || "admin123";
       const validSuperAdminPwd = process.env.SUPERADMIN_PASSWORD || "superadmin123";
 
-      if ((isSystemAdmin && password === validAdminPwd) || (isSystemSuperAdmin && password === validSuperAdminPwd)) {
-        authUser = {
-          id: isSystemSuperAdmin ? "superadmin_dev_id" : "admin_dev_id",
-          email: email,
-          user_metadata: { nome: isSystemSuperAdmin ? "Super Administrador" : "Administrador" },
-        } as any;
+      const isPasswordValid =
+        (isSystemAdmin && password === validAdminPwd) ||
+        (isSystemSuperAdmin && password === validSuperAdminPwd);
+
+      if (isPasswordValid) {
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+        const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+        if (supabaseUrl && serviceRoleKey && !supabaseUrl.includes("placeholder")) {
+          try {
+            const { createClient: createAdminClient } = await import("@supabase/supabase-js");
+            const supabaseAdmin = createAdminClient(supabaseUrl, serviceRoleKey, {
+              auth: { autoRefreshToken: false, persistSession: false },
+            });
+
+            const { data: usersData } = await supabaseAdmin.auth.admin.listUsers();
+            const existingAuthUser = usersData?.users?.find(
+              (u) => u.email?.toLowerCase() === email
+            );
+
+            if (existingAuthUser) {
+              await supabaseAdmin.auth.admin.updateUserById(existingAuthUser.id, {
+                password,
+                email_confirm: true,
+              });
+              const retry = await supabase.auth.signInWithPassword({ email, password });
+              authUser = retry.data?.user || (existingAuthUser as any);
+            } else {
+              const created = await supabaseAdmin.auth.admin.createUser({
+                email,
+                password,
+                email_confirm: true,
+                user_metadata: { nome: isSystemSuperAdmin ? "Super Administrador" : "Administrador" },
+              });
+              if (created.data?.user) {
+                const retry = await supabase.auth.signInWithPassword({ email, password });
+                authUser = retry.data?.user || (created.data.user as any);
+              }
+            }
+          } catch (adminErr) {
+            console.warn("Aviso ao sincronizar conta admin no Supabase Auth:", adminErr);
+          }
+        }
+
+        if (!authUser) {
+          authUser = {
+            id: isSystemSuperAdmin ? "superadmin_dev_id" : "admin_dev_id",
+            email: email,
+            user_metadata: { nome: isSystemSuperAdmin ? "Super Administrador" : "Administrador" },
+          } as any;
+        }
       }
     }
 
@@ -148,7 +193,7 @@ export async function loginAction(formData: FormData) {
         where: { email },
       });
     } catch (err) {
-      console.warn("Aviso: Banco de dados indisponível, utilizando fallback em memória:", err);
+      console.warn("Aviso: Banco de dados indisponível no momento:", err);
       dbError = true;
     }
 
@@ -283,7 +328,7 @@ export async function redefinirSenhaAction(newPassword: string) {
     }
 
     const supabase = await createClient();
-    const { error } = await supabase.auth.updateUser({
+    const { error } = await supabase.error ? null : await supabase.auth.updateUser({
       password: newPassword,
     });
 
