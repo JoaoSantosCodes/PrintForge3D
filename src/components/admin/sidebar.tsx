@@ -23,6 +23,7 @@ import {
   X,
   PanelLeftClose,
   PanelLeftOpen,
+  Network,
 } from "lucide-react";
 import { logoutAction } from "@/app/actions/auth";
 import { getLowStockCountAction } from "@/app/actions/filaments";
@@ -53,7 +54,6 @@ export function Sidebar() {
       }
     });
 
-    // Restore desktop collapsed state preference from localStorage
     try {
       const stored = localStorage.getItem("admin_sidebar_collapsed");
       if (stored === "true") {
@@ -62,7 +62,6 @@ export function Sidebar() {
     } catch {}
   }, [pathname]);
 
-  // Close mobile sidebar on route change
   useEffect(() => {
     setMobileOpen(false);
   }, [pathname]);
@@ -97,8 +96,9 @@ export function Sidebar() {
       ],
     },
     {
-      title: "GESTÃO & SISTEMA",
+      title: "GESTÃO & REDE",
       items: [
+        { label: "Indicações Binárias", href: "/admin/indicacoes", icon: Network },
         { label: "Meu Plano / Assinatura", href: "/admin/assinatura", icon: CreditCard },
         { label: "Usuários", href: "/admin/usuarios", icon: Users, badge: pendingUsersCount > 0 ? `🔴 ${pendingUsersCount}` : null },
         { label: "Auditoria", href: "/admin/auditoria", icon: FileText },
@@ -145,7 +145,7 @@ export function Sidebar() {
           </div>
         </div>
 
-        {/* Sectioned Navigation - flex-1 min-h-0 guarantees smooth internal scrolling */}
+        {/* Sectioned Navigation */}
         <nav className="flex-1 overflow-y-auto min-h-0 p-3 space-y-4 scrollbar-thin">
           {navGroups.map((group, idx) => (
             <div key={group.title} className="space-y-1">
@@ -225,7 +225,7 @@ export function Sidebar() {
 
   return (
     <>
-      {/* Mobile Top Navigation Header (< 768px) */}
+      {/* Mobile Top Navigation Header */}
       <div className="md:hidden sticky top-0 z-30 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-4 py-3 flex items-center justify-between">
         <button
           type="button"
@@ -267,7 +267,7 @@ export function Sidebar() {
         </div>
       )}
 
-      {/* Desktop Sticky Sidebar (>= 768px) with Expand/Collapse Transition */}
+      {/* Desktop Sticky Sidebar */}
       <aside className={`hidden md:flex ${collapsed ? "w-20" : "w-64"} h-screen sticky top-0 shrink-0 z-30 transition-all duration-200`}>
         {renderSidebarContent(false)}
       </aside>

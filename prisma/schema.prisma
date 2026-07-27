@@ -9,17 +9,40 @@ datasource db {
 }
 
 model Profile {
-  id          String    @id // Mesmo ID do Supabase Auth (auth.users.id)
-  email       String    @unique
-  nome        String?
-  role        String    @default("usuario") // "super_admin" | "admin" | "usuario"
-  status      String    @default("pendente") // "pendente" | "aprovado" | "bloqueado"
-  empresaId   String?
-  empresa     Empresa?  @relation(fields: [empresaId], references: [id], onDelete: SetNull)
-  createdAt   DateTime  @default(now())
-  aprovadoEm  DateTime?
+  id                  String              @id // Mesmo ID do Supabase Auth (auth.users.id)
+  email               String              @unique
+  nome                String?
+  role                String              @default("usuario") // "super_admin" | "admin" | "usuario"
+  status              String              @default("pendente") // "pendente" | "aprovado" | "bloqueado"
+  empresaId           String?
+  empresa             Empresa?            @relation(fields: [empresaId], references: [id], onDelete: SetNull)
 
-  pedidos     Pedido[]
+  // Sistema de Indicação Binário (Perna Esquerda / Direita)
+  codigoIndicacao     String?             @unique
+  indicadorId         String?
+  pernaIndicacao      String?             // "esquerda" | "direita"
+  posicaoPreferencial String              @default("auto") // "auto" | "esquerda" | "direita"
+  indicador           Profile?            @relation("ArvoreIndicacao", fields: [indicadorId], references: [id], onDelete: SetNull)
+  indicados           Profile[]           @relation("ArvoreIndicacao")
+
+  createdAt           DateTime            @default(now())
+  aprovadoEm          DateTime?
+
+  pedidos             Pedido[]
+  indicacoesOrigem    IndicacaoRegistro[] @relation("RegistroIndicador")
+  indicacoesDestino   IndicacaoRegistro[] @relation("RegistroIndicado")
+}
+
+model IndicacaoRegistro {
+  id          String   @id @default(cuid())
+  indicadorId String
+  indicador   Profile  @relation("RegistroIndicador", fields: [indicadorId], references: [id], onDelete: Cascade)
+  indicadoId  String
+  indicado   Profile  @relation("RegistroIndicado", fields: [indicadoId], references: [id], onDelete: Cascade)
+  perna       String   // "esquerda" | "direita"
+  pontos      Float    @default(0)
+  status      String   @default("ativo") // "ativo" | "inativo"
+  createdAt   DateTime @default(now())
 }
 
 model Plano {

@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { criarLojaAction } from "@/app/actions/criar-loja";
-import { Store, Check, AlertCircle, Loader2, Sparkles, ShieldCheck, ArrowRight, Layers } from "lucide-react";
+import { Store, Check, AlertCircle, Loader2, Sparkles, ShieldCheck, ArrowRight, Layers, Network } from "lucide-react";
 import Link from "next/link";
 
 interface Plano {
@@ -18,6 +18,10 @@ interface Plano {
 
 export default function CriarLojaClient({ planos }: { planos: Plano[] }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const refCode = searchParams.get("ref") || "";
+  const perna = searchParams.get("perna") || "";
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -94,6 +98,8 @@ export default function CriarLojaClient({ planos }: { planos: Plano[] }) {
     formData.append("email", email);
     formData.append("password", password);
     if (planoId) formData.append("planoId", planoId);
+    if (refCode) formData.append("refCode", refCode);
+    if (perna) formData.append("perna", perna);
 
     const res = await criarLojaAction(formData);
 
@@ -143,6 +149,14 @@ export default function CriarLojaClient({ planos }: { planos: Plano[] }) {
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-xs font-semibold">
             <Sparkles className="w-4 h-4" /> 14 dias grátis • Sem cartão de crédito
           </div>
+
+          {/* Referral Banner */}
+          {refCode && (
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-purple-500/10 border border-purple-500/30 text-purple-300 text-xs font-bold shadow-lg animate-in fade-in duration-300">
+              <Network className="w-4 h-4 text-purple-400" /> Indicado por: <span className="font-mono text-purple-200">{refCode}</span> {perna && `(Perna ${perna === "esquerda" ? "Esquerda ⬅️" : "Direita ➡️"})`}
+            </div>
+          )}
+
           <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-white">
             Crie sua Loja de Impressão 3D em Minutos
           </h1>

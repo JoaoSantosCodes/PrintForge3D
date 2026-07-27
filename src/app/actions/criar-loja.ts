@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
 import { RESERVED_SLUGS } from "@/lib/constants";
+import { vincularIndicacao } from "@/lib/indicacoes";
 import { z } from "zod";
 
 const criarLojaSchema = z.object({
@@ -15,6 +16,8 @@ const criarLojaSchema = z.object({
   email: z.string().email("E-mail inválido"),
   password: z.string().min(6, "A senha deve ter no mínimo 6 caracteres"),
   planoId: z.string().optional(),
+  refCode: z.string().optional(),
+  perna: z.string().optional(),
 });
 
 export async function criarLojaAction(formData: FormData) {
@@ -26,6 +29,8 @@ export async function criarLojaAction(formData: FormData) {
       email: (formData.get("email") as string || "").trim().toLowerCase(),
       password: formData.get("password"),
       planoId: formData.get("planoId") as string | undefined,
+      refCode: formData.get("refCode") as string | undefined,
+      perna: formData.get("perna") as string | undefined,
     };
 
     const v = criarLojaSchema.parse(rawData);
@@ -104,7 +109,7 @@ export async function criarLojaAction(formData: FormData) {
     });
 
     // 6. Criar Perfil de Admin vinculado à nova Empresa
-    await prisma.profile.upsert({
+    const novoPerfil = await prisma.profile.upsert({
       where: { email: v.email },
       create: {
         id: authUserId,
@@ -122,7 +127,16 @@ export async function criarLojaAction(formData: FormData) {
       },
     });
 
-    // 7. Criar Configuração da Empresa
+    // 7. Processar vínculo de indicação se houver refCode
+    if (v.refCode) {
+      await vincularIndicacao({
+        indicadoId: novoPerfil.id,
+        refCode: v.refCode,
+        pernaSolicitada: v.perna,
+      });
+    }
+
+    // 8. Criar Configuração da Empresa
     await prisma.configuracao.create({
       data: {
         empresaId: novaEmpresa.id,
