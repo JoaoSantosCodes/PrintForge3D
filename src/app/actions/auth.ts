@@ -328,7 +328,7 @@ export async function redefinirSenhaAction(newPassword: string) {
     }
 
     const supabase = await createClient();
-    const { error } = await supabase.error ? null : await supabase.auth.updateUser({
+    const { error } = await supabase.auth.updateUser({
       password: newPassword,
     });
 
