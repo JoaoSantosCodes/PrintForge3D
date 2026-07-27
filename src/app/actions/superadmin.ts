@@ -191,8 +191,17 @@ export async function criarUsuarioSuperAdminAction(formData: FormData) {
       return { error: "A senha deve ter no mínimo 6 caracteres." };
     }
 
-    // Verificar se já existe perfil com este e-mail
-    const existing = await prisma.profile.findUnique({ where: { email } });
+    // Verificar se já existe perfil com este e-mail (usando select seguro)
+    let existing: any = null;
+    try {
+      existing = await prisma.profile.findFirst({
+        where: { email },
+        select: { id: true, email: true },
+      });
+    } catch (findErr) {
+      console.warn("Aviso ao verificar e-mail de perfil:", findErr);
+    }
+
     if (existing) {
       return { error: "Já existe um usuário cadastrado com este e-mail." };
     }
@@ -227,17 +236,36 @@ export async function criarUsuarioSuperAdminAction(formData: FormData) {
       }
     }
 
-    const profile = await prisma.profile.create({
-      data: {
-        id: authUserId,
-        email,
-        nome: nome || email.split("@")[0],
-        role,
-        status,
-        empresaId: empresaId ? empresaId : null,
-        aprovadoEm: status === "aprovado" ? new Date() : null,
-      },
-    });
+    let profile: any = null;
+    try {
+      profile = await prisma.profile.create({
+        data: {
+          id: authUserId,
+          email,
+          nome: nome || email.split("@")[0],
+          role,
+          status,
+          empresaId: empresaId ? empresaId : null,
+          aprovadoEm: status === "aprovado" ? new Date() : null,
+        },
+      });
+    } catch (createErr: any) {
+      console.warn("Aviso: Falha ao criar perfil com empresaId, tentando fallback omitindo empresaId:", createErr?.message);
+      try {
+        profile = await prisma.profile.create({
+          data: {
+            id: authUserId,
+            email,
+            nome: nome || email.split("@")[0],
+            role,
+            status,
+            aprovadoEm: status === "aprovado" ? new Date() : null,
+          },
+        });
+      } catch (fallbackErr: any) {
+        return { error: fallbackErr?.message || "Não foi possível cadastrar o perfil no banco de dados." };
+      }
+    }
 
     revalidatePath("/superadmin/usuarios");
     revalidatePath("/superadmin");

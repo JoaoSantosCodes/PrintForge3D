@@ -21,6 +21,20 @@ export default async function SuperAdminUsuariosPage() {
           },
         },
         orderBy: { createdAt: "desc" },
+      }).catch(async () => {
+        // Fallback se o banco ainda não tiver a coluna empresaId
+        return await prisma.profile.findMany({
+          select: {
+            id: true,
+            email: true,
+            nome: true,
+            role: true,
+            status: true,
+            createdAt: true,
+            aprovadoEm: true,
+          },
+          orderBy: { createdAt: "desc" },
+        }).catch(() => []);
       }),
       prisma.empresa.findMany({
         select: {
@@ -29,10 +43,10 @@ export default async function SuperAdminUsuariosPage() {
           slug: true,
         },
         orderBy: { nome: "asc" },
-      }),
+      }).catch(() => []),
       prisma.solicitacaoExclusao.findMany({
         orderBy: { createdAt: "desc" },
-      }),
+      }).catch(() => []),
     ]);
 
     usuarios = fUsuarios;
