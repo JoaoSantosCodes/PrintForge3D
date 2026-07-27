@@ -5,14 +5,14 @@ import AssinaturaClientPage from "./assinatura-client";
 export const dynamic = "force-dynamic";
 
 export default async function AdminAssinaturaPage() {
-  const profile = await getCurrentProfile();
-  const empresaId = await getEmpresaIdAtual();
-
   let empresa: any = null;
   let planos: any[] = [];
   let usage = { printers: 0, pecas: 0, pedidosMes: 0 };
 
   try {
+    const profile = await getCurrentProfile();
+    const empresaId = await getEmpresaIdAtual();
+
     const startOfMonth = new Date();
     startOfMonth.setDate(1);
     startOfMonth.setHours(0, 0, 0, 0);
@@ -36,7 +36,20 @@ export default async function AdminAssinaturaPage() {
       }),
     ]);
 
-    empresa = fetchedEmpresa;
+    empresa = fetchedEmpresa || profile?.empresa || {
+      id: "minha-loja",
+      nome: "Minha Loja 3D",
+      slug: "minha-loja",
+      status: "ativo",
+      plano: {
+        id: "plano-starter",
+        nome: "Starter",
+        precoMensal: 49.9,
+        limiteImpressoras: 10,
+        limitePecas: 50,
+        limitePedidosMes: 100,
+      },
+    };
     planos = fetchedPlanos;
     usage = {
       printers: countPrinters,

@@ -7,20 +7,29 @@ export const dynamic = "force-dynamic";
 export default async function AdminUsuariosPage() {
   let currentUserId: string | null = null;
   let empresaId: string | null = null;
+  let usuarios: any[] = [];
+  let solicitacoesExclusao: any[] = [];
+
   try {
     const profile = await getCurrentProfile();
     currentUserId = profile?.id || null;
     empresaId = await getEmpresaIdAtualOptional();
-  } catch {}
 
-  const usuarios = await prisma.profile.findMany({
-    where: empresaId ? { empresaId } : undefined,
-    orderBy: { createdAt: "desc" },
-  });
+    const [fUsuarios, fSolicitacoes] = await Promise.all([
+      prisma.profile.findMany({
+        where: empresaId ? { empresaId } : undefined,
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.solicitacaoExclusao.findMany({
+        orderBy: { createdAt: "desc" },
+      }),
+    ]);
 
-  const solicitacoesExclusao = await prisma.solicitacaoExclusao.findMany({
-    orderBy: { createdAt: "desc" },
-  });
+    usuarios = fUsuarios;
+    solicitacoesExclusao = fSolicitacoes;
+  } catch (err) {
+    console.warn("Erro ao carregar usuários:", err);
+  }
 
   return (
     <UsuariosClientPage
