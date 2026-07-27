@@ -12,6 +12,10 @@ export default async function PerfilPage() {
     redirect("/login?redirectTo=/perfil");
   }
 
+  if (profile.role === "admin") {
+    redirect("/admin/perfil");
+  }
+
   const formattedProfile = {
     id: profile.id,
     email: profile.email,
@@ -22,9 +26,9 @@ export default async function PerfilPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 selection:bg-teal-500 selection:text-slate-950">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors selection:bg-teal-500 selection:text-slate-950">
       <PublicNavbar />
-      <main className="p-6 sm:p-12">
+      <main className="p-4 sm:p-6 md:p-12">
         <PerfilClient profile={formattedProfile} />
       </main>
     </div>

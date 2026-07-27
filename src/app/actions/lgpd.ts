@@ -80,6 +80,7 @@ export async function requestAccountDeletionAction(motivo?: string) {
     });
 
     revalidatePath("/perfil");
+    revalidatePath("/admin/perfil");
     return { success: true, message: "Sua solicitação de exclusão de conta foi enviada com sucesso ao administrador." };
   } catch (err: any) {
     return { error: err?.message || "Erro ao solicitar exclusão da conta." };

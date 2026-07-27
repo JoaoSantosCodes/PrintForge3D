@@ -266,6 +266,7 @@ export async function atualizarPerfilAction(nome: string, newPassword?: string) 
     }
 
     revalidatePath("/perfil");
+    revalidatePath("/admin/perfil");
     revalidatePath("/admin");
     revalidatePath("/catalogo");
     return { success: true, message: "Perfil atualizado com sucesso!" };

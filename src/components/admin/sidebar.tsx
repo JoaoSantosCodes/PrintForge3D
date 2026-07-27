@@ -67,7 +67,7 @@ export function Sidebar() {
     { label: "Relatórios", href: "/admin/relatorios", icon: BarChart3 },
     { label: "Usuários", href: "/admin/usuarios", icon: Users, badge: pendingUsersCount > 0 ? `🔴 ${pendingUsersCount}` : null },
     { label: "Auditoria", href: "/admin/auditoria", icon: FileText },
-    { label: "Meu Perfil", href: "/perfil", icon: User },
+    { label: "Meu Perfil", href: "/admin/perfil", icon: User },
   ];
 
   const SidebarContent = (
