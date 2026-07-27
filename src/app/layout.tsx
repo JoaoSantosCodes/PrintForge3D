@@ -14,6 +14,9 @@ export const metadata: Metadata = {
     title: "PrintForge 3D",
     statusBarStyle: "black-translucent",
   },
+  other: {
+    "mobile-web-app-capable": "yes",
+  },
 };
 
 export default function RootLayout({

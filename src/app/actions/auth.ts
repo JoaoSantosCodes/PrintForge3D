@@ -199,11 +199,11 @@ export async function loginAction(formData: FormData) {
     cookieStore.set("demo_user_email", profile.email, { path: "/", httpOnly: true, sameSite: "lax" });
   } catch {}
 
-  if (profile.role === "admin") {
-    redirect(targetRedirect.startsWith("/admin") ? targetRedirect : "/admin");
-  } else {
-    redirect(targetRedirect || "/catalogo");
-  }
+  const redirectUrl = profile.role === "admin"
+    ? (targetRedirect.startsWith("/admin") ? targetRedirect : "/admin")
+    : (targetRedirect || "/catalogo");
+
+  return { success: true, redirectUrl };
 }
 
 export async function solicitarRecuperacaoSenhaAction(email: string) {

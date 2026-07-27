@@ -17,9 +17,16 @@ export default function LoginPage({
   async function handleSubmit(formData: FormData) {
     setLoading(true);
     setErrorMsg("");
-    const res = await loginAction(formData);
-    if (res?.error) {
-      setErrorMsg(res.error);
+    try {
+      const res = await loginAction(formData);
+      if (res?.error) {
+        setErrorMsg(res.error);
+        setLoading(false);
+      } else if (res?.redirectUrl) {
+        window.location.href = res.redirectUrl;
+      }
+    } catch (err: any) {
+      setErrorMsg(err?.message || "Erro inesperado ao realizar login.");
       setLoading(false);
     }
   }
