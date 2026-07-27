@@ -20,6 +20,8 @@ import {
   Settings,
   Menu,
   X,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from "lucide-react";
 import { logoutAction } from "@/app/actions/auth";
 import { getLowStockCountAction } from "@/app/actions/filaments";
@@ -31,6 +33,7 @@ export function Sidebar() {
   const [lowStockCount, setLowStockCount] = useState(0);
   const [pendingUsersCount, setPendingUsersCount] = useState(0);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
 
   useEffect(() => {
     getLowStockCountAction().then((res) => {
@@ -48,12 +51,30 @@ export function Sidebar() {
         setPendingUsersCount(0);
       }
     });
+
+    // Restore desktop collapsed state preference from localStorage
+    try {
+      const stored = localStorage.getItem("admin_sidebar_collapsed");
+      if (stored === "true") {
+        setCollapsed(true);
+      }
+    } catch {}
   }, [pathname]);
 
   // Close mobile sidebar on route change
   useEffect(() => {
     setMobileOpen(false);
   }, [pathname]);
+
+  const toggleCollapsed = () => {
+    setCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem("admin_sidebar_collapsed", String(next));
+      } catch {}
+      return next;
+    });
+  };
 
   const navGroups = [
     {
@@ -85,32 +106,53 @@ export function Sidebar() {
     },
   ];
 
-  const SidebarContent = (
-    <div className="flex flex-col justify-between h-full bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 transition-colors">
-      <div>
-        {/* Brand */}
-        <div className="p-5 border-b border-slate-200 dark:border-slate-800/80 flex items-center justify-between">
+  const renderSidebarContent = (isMobile = false) => {
+    const isCollapsed = !isMobile && collapsed;
+
+    return (
+      <div className="flex flex-col h-full bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 transition-colors">
+        {/* Brand & Desktop Collapse Toggle */}
+        <div className={`p-4 border-b border-slate-200 dark:border-slate-800/80 flex items-center shrink-0 ${isCollapsed ? "justify-center flex-col gap-3" : "justify-between"}`}>
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-teal-500 to-cyan-400 flex items-center justify-center shadow-lg shadow-teal-500/20 text-slate-950 font-black text-lg">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-teal-500 to-cyan-400 flex items-center justify-center shadow-lg shadow-teal-500/20 text-slate-950 font-black text-lg shrink-0">
               3D
             </div>
-            <div>
-              <h1 className="font-bold text-slate-900 dark:text-slate-100 tracking-tight text-base leading-tight">
-                PrintForge <span className="text-teal-500 dark:text-teal-400">3D</span>
-              </h1>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Gestão & Custos</p>
-            </div>
+            {!isCollapsed && (
+              <div>
+                <h1 className="font-bold text-slate-900 dark:text-slate-100 tracking-tight text-base leading-tight">
+                  PrintForge <span className="text-teal-500 dark:text-teal-400">3D</span>
+                </h1>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Gestão & Custos</p>
+              </div>
+            )}
           </div>
-          <ThemeToggle />
+
+          <div className="flex items-center gap-1">
+            {!isCollapsed && <ThemeToggle />}
+            {!isMobile && (
+              <button
+                type="button"
+                onClick={toggleCollapsed}
+                className="hidden md:flex p-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                title={isCollapsed ? "Expandir Sidebar" : "Colapsar Sidebar"}
+              >
+                {isCollapsed ? <PanelLeftOpen className="w-5 h-5" /> : <PanelLeftClose className="w-5 h-5" />}
+              </button>
+            )}
+          </div>
         </div>
 
-        {/* Sectioned Navigation */}
-        <nav className="p-4 space-y-5 overflow-y-auto max-h-[calc(100vh-170px)] scrollbar-thin">
+        {/* Sectioned Navigation - flex-1 min-h-0 guarantees smooth internal scrolling */}
+        <nav className="flex-1 overflow-y-auto min-h-0 p-3 space-y-4 scrollbar-thin">
           {navGroups.map((group, idx) => (
             <div key={group.title} className="space-y-1">
-              <div className="px-3 pb-1 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest flex items-center justify-between">
-                <span>{group.title}</span>
-              </div>
+              {!isCollapsed ? (
+                <div className="px-3 pb-1 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest flex items-center justify-between">
+                  <span>{group.title}</span>
+                </div>
+              ) : (
+                idx > 0 && <div className="border-t border-slate-200 dark:border-slate-800/80 my-2" />
+              )}
               {group.items.map((item) => {
                 const Icon = item.icon;
                 const isActive = pathname === item.href || (item.href !== "/admin" && pathname.startsWith(item.href));
@@ -118,55 +160,65 @@ export function Sidebar() {
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-semibold transition-all ${
+                    title={isCollapsed ? item.label : undefined}
+                    className={`flex items-center ${isCollapsed ? "justify-center p-2.5" : "justify-between px-3.5 py-2"} rounded-xl text-xs font-semibold transition-all relative ${
                       isActive
                         ? "bg-teal-500/10 text-teal-600 dark:text-teal-300 border border-teal-500/20 shadow-sm"
                         : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/60"
                     }`}
                   >
-                    <div className="flex items-center gap-3">
-                      <Icon className={`w-4 h-4 ${isActive ? "text-teal-500 dark:text-teal-400" : "text-slate-400 dark:text-slate-500"}`} />
-                      <span>{item.label}</span>
+                    <div className={`flex items-center ${isCollapsed ? "justify-center" : "gap-3"}`}>
+                      <Icon className={`w-4 h-4 shrink-0 ${isActive ? "text-teal-500 dark:text-teal-400" : "text-slate-400 dark:text-slate-500"}`} />
+                      {!isCollapsed && <span>{item.label}</span>}
                     </div>
                     {item.badge && (
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/20 text-rose-600 dark:text-rose-300 border border-rose-500/30">
-                        {item.badge}
-                      </span>
+                      isCollapsed ? (
+                        <span className="w-2.5 h-2.5 rounded-full bg-rose-500 absolute top-1.5 right-1.5 border border-white dark:border-slate-900" />
+                      ) : (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/20 text-rose-600 dark:text-rose-300 border border-rose-500/30">
+                          {item.badge}
+                        </span>
+                      )
                     )}
                   </Link>
                 );
               })}
-              {idx < navGroups.length - 1 && (
-                <div className="pt-2 border-b border-slate-100 dark:border-slate-800/60 my-1" />
-              )}
             </div>
           ))}
         </nav>
-      </div>
 
-      {/* Footer / Fixed Actions */}
-      <div className="p-4 border-t border-slate-200 dark:border-slate-800/80 space-y-2">
-        <Link
-          href="/catalogo"
-          target="_blank"
-          className="flex items-center justify-center gap-2 w-full px-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-300 dark:border-slate-700/60 rounded-xl transition-all"
-        >
-          <Globe className="w-3.5 h-3.5 text-cyan-500 dark:text-cyan-400" />
-          Ver Catálogo Público
-        </Link>
+        {/* Footer / Fixed Actions */}
+        <div className="p-3 border-t border-slate-200 dark:border-slate-800/80 space-y-2 shrink-0">
+          {isCollapsed && (
+            <div className="flex justify-center pb-1">
+              <ThemeToggle />
+            </div>
+          )}
 
-        <form action={logoutAction}>
-          <button
-            type="submit"
-            className="flex items-center gap-2 w-full px-3.5 py-2 text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 rounded-xl transition-all"
+          <Link
+            href="/catalogo"
+            target="_blank"
+            title="Ver Catálogo Público"
+            className={`flex items-center ${isCollapsed ? "justify-center p-2.5" : "justify-center gap-2 px-3 py-2"} text-xs font-medium text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-300 dark:border-slate-700/60 rounded-xl transition-all`}
           >
-            <LogOut className="w-3.5 h-3.5" />
-            Sair da Conta
-          </button>
-        </form>
+            <Globe className="w-4 h-4 text-cyan-500 dark:text-cyan-400 shrink-0" />
+            {!isCollapsed && <span>Ver Catálogo Público</span>}
+          </Link>
+
+          <form action={logoutAction}>
+            <button
+              type="submit"
+              title="Sair da Conta"
+              className={`flex items-center ${isCollapsed ? "justify-center p-2.5 w-full" : "gap-2 w-full px-3.5 py-2"} text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 rounded-xl transition-all`}
+            >
+              <LogOut className="w-4 h-4 shrink-0" />
+              {!isCollapsed && <span>Sair da Conta</span>}
+            </button>
+          </form>
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <>
@@ -203,18 +255,18 @@ export function Sidebar() {
           <div className="relative flex-1 w-full max-w-xs bg-white dark:bg-slate-900 shadow-2xl flex flex-col z-10 animate-in slide-in-from-left duration-200">
             <button
               onClick={() => setMobileOpen(false)}
-              className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
+              className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 z-10"
             >
               <X className="w-5 h-5" />
             </button>
-            {SidebarContent}
+            {renderSidebarContent(true)}
           </div>
         </div>
       )}
 
-      {/* Desktop Sticky Sidebar (>= 768px) */}
-      <aside className="hidden md:flex w-64 min-h-screen sticky top-0 shrink-0 z-30">
-        {SidebarContent}
+      {/* Desktop Sticky Sidebar (>= 768px) with Expand/Collapse Transition */}
+      <aside className={`hidden md:flex ${collapsed ? "w-20" : "w-64"} h-screen sticky top-0 shrink-0 z-30 transition-all duration-200`}>
+        {renderSidebarContent(false)}
       </aside>
     </>
   );
