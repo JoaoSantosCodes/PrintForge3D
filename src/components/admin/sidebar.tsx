@@ -127,16 +127,17 @@ export function Sidebar() {
             )}
           </div>
 
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5">
             {!isCollapsed && <ThemeToggle />}
             {!isMobile && (
               <button
                 type="button"
                 onClick={toggleCollapsed}
-                className="hidden md:flex p-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                className="hidden md:flex items-center justify-center p-2 rounded-xl text-slate-500 hover:text-teal-600 dark:text-slate-400 dark:hover:text-teal-400 bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700/60 shadow-xs transition-all"
                 title={isCollapsed ? "Expandir Sidebar" : "Colapsar Sidebar"}
+                aria-label={isCollapsed ? "Expandir Sidebar" : "Colapsar Sidebar"}
               >
-                {isCollapsed ? <PanelLeftOpen className="w-5 h-5" /> : <PanelLeftClose className="w-5 h-5" />}
+                {isCollapsed ? <PanelLeftOpen className="w-4 h-4 text-teal-500" /> : <PanelLeftClose className="w-4 h-4" />}
               </button>
             )}
           </div>
