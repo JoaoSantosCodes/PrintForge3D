@@ -1,3 +1,5 @@
+"use server";
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -24,6 +26,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Network,
+  DollarSign,
 } from "lucide-react";
 import { logoutAction } from "@/app/actions/auth";
 import { getLowStockCountAction } from "@/app/actions/filaments";
@@ -81,6 +84,7 @@ export function Sidebar() {
       title: "OPERAÇÃO",
       items: [
         { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
+        { label: "Financeiro & DRE", href: "/admin/financeiro", icon: DollarSign },
         { label: "Pedidos", href: "/admin/pedidos", icon: ShoppingBag },
         { label: "Relatórios", href: "/admin/relatorios", icon: BarChart3 },
         { label: "Cupons", href: "/admin/cupons", icon: Ticket },
