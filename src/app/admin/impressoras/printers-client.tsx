@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 import { Plus, Edit2, Trash2, Zap, Clock, DollarSign, Printer, Wrench, CheckCircle2, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
@@ -44,15 +45,22 @@ export default function PrintersClientPage({ initialPrinters }: { initialPrinter
     setLoading(false);
     if (res?.error) {
       setErrorMsg(res.error);
+      toast.error(res.error);
     } else {
+      toast.success(editingPrinter ? "Impressora atualizada com sucesso!" : "Impressora cadastrada com sucesso!");
       setIsModalOpen(false);
     }
   };
 
   const confirmDelete = async () => {
     if (deletingPrinter) {
-      await deletePrinterAction(deletingPrinter.id);
+      const res = await deletePrinterAction(deletingPrinter.id);
       setDeletingPrinter(null);
+      if (res?.error) {
+        toast.error(res.error);
+      } else {
+        toast.success("Impressora removida com sucesso!");
+      }
     }
   };
 

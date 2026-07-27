@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Analytics } from "@vercel/analytics/react";
 import { ThemeProvider } from "@/components/theme-provider";
+import { ToasterProvider } from "@/components/ui/toaster-provider";
 import "./globals.css";
 
 export const viewport: Viewport = {
@@ -31,6 +32,7 @@ export default function RootLayout({
       <body className="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 min-h-screen antialiased selection:bg-teal-500 selection:text-slate-950 transition-colors duration-200">
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={true}>
           {children}
+          <ToasterProvider />
           <Analytics />
         </ThemeProvider>
       </body>

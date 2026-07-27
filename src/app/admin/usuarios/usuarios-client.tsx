@@ -23,6 +23,8 @@ import {
   ShieldAlert,
 } from "lucide-react";
 
+import { toast } from "sonner";
+
 interface UsuariosClientPageProps {
   usuarios: any[];
   solicitacoesExclusao?: any[];
@@ -50,28 +52,44 @@ export default function UsuariosClientPage({
     setActionLoadingId(id);
     const res = await aprovarUsuarioAction(id);
     setActionLoadingId(null);
-    if (res?.error) alert(res.error);
+    if (res?.error) {
+      toast.error(res.error);
+    } else {
+      toast.success("Usuário aprovado com sucesso!");
+    }
   };
 
   const handleBloquear = async (id: string) => {
     setActionLoadingId(id);
     const res = await bloquearUsuarioAction(id);
     setActionLoadingId(null);
-    if (res?.error) alert(res.error);
+    if (res?.error) {
+      toast.error(res.error);
+    } else {
+      toast.success("Usuário bloqueado com sucesso!");
+    }
   };
 
   const handleReativar = async (id: string) => {
     setActionLoadingId(id);
     const res = await reativarUsuarioAction(id);
     setActionLoadingId(null);
-    if (res?.error) alert(res.error);
+    if (res?.error) {
+      toast.error(res.error);
+    } else {
+      toast.success("Usuário reativado com sucesso!");
+    }
   };
 
-  const handleResolveDeletion = async (id: string, status: "concluido" | "rejeitado") => {
-    setActionLoadingId(id);
-    const res = await resolveDeletionRequestAction(id, status);
+  const handleResolveLGPD = async (requestId: string, status: "concluido" | "rejeitado") => {
+    setActionLoadingId(requestId);
+    const res = await resolveDeletionRequestAction(requestId, status);
     setActionLoadingId(null);
-    if (res?.error) alert(res.error);
+    if (res?.error) {
+      toast.error(res.error);
+    } else {
+      toast.success(status === "concluido" ? "Solicitação LGPD concluída com sucesso!" : "Solicitação LGPD rejeitada.");
+    }
   };
 
   const pendentesExclusao = solicitacoesExclusao.filter((s) => s.status === "pendente");
@@ -123,7 +141,7 @@ export default function UsuariosClientPage({
                     size="sm"
                     className="w-full text-xs"
                     disabled={actionLoadingId === req.id}
-                    onClick={() => handleResolveDeletion(req.id, "concluido")}
+                    onClick={() => handleResolveLGPD(req.id, "concluido")}
                   >
                     Confirmar Exclusão
                   </Button>
@@ -132,7 +150,7 @@ export default function UsuariosClientPage({
                     size="sm"
                     className="w-full text-xs"
                     disabled={actionLoadingId === req.id}
-                    onClick={() => handleResolveDeletion(req.id, "rejeitado")}
+                    onClick={() => handleResolveLGPD(req.id, "rejeitado")}
                   >
                     Rejeitar
                   </Button>

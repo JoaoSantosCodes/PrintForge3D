@@ -35,6 +35,17 @@ body {
   antialiased: true;
 }
 
+/* Accessible focus-visible styles for keyboard Tab navigation */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: none !important;
+  box-shadow: 0 0 0 2px #0d9488, 0 0 0 4px rgba(13, 148, 136, 0.25) !important;
+  border-radius: 0.5rem;
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 8px;

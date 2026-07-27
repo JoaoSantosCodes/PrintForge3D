@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 import {
   createTintaAction,
   updateTintaAction,
@@ -109,8 +110,10 @@ export default function TintasClientPage({
 
     if (res?.error) {
       setErrorMsg(res.error);
+      toast.error(res.error);
       setLoading(false);
     } else {
+      toast.success(editingTinta ? "Insumo/tinta atualizado com sucesso!" : "Insumo/tinta cadastrado com sucesso!");
       setLoading(false);
       handleCloseModal();
       window.location.reload();
@@ -122,8 +125,10 @@ export default function TintasClientPage({
     if (!res.error) {
       setTintas(tintas.filter((t) => t.id !== id));
       setDeleteConfirmId(null);
+      toast.success("Insumo/tinta removido com sucesso!");
     } else {
-      alert(res.error);
+      setErrorMsg(res.error);
+      toast.error(res.error);
     }
   }
 

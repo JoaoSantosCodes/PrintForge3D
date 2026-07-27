@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 import {
   createPedidoAction,
   updatePedidoStatusAction,
@@ -135,8 +136,10 @@ export default function PedidosClientPage({
 
     if (res?.error) {
       setErrorMsg(res.error);
+      toast.error(res.error);
       setLoading(false);
     } else {
+      toast.success(editingPedido ? "Pedido atualizado com sucesso!" : "Novo pedido criado com sucesso!");
       setLoading(false);
       handleCloseModal();
       window.location.reload();
@@ -152,6 +155,7 @@ export default function PedidosClientPage({
     if (nextIndex < 0 || nextIndex >= statusOrder.length) return;
 
     const newStatus = statusOrder[nextIndex];
+    const newStatusLabel = STATUS_COLUMNS.find((c) => c.id === newStatus)?.label || newStatus;
 
     // Optimistic UI update
     setPedidos((prev) =>
@@ -160,8 +164,10 @@ export default function PedidosClientPage({
 
     const res = await updatePedidoStatusAction(pedidoId, newStatus);
     if (res.error) {
-      alert(res.error);
+      toast.error(res.error);
       window.location.reload();
+    } else {
+      toast.success(`Pedido movido para "${newStatusLabel}"`);
     }
   }
 
@@ -170,8 +176,9 @@ export default function PedidosClientPage({
     if (!res.error) {
       setPedidos(pedidos.filter((p) => p.id !== id));
       setDeleteConfirmId(null);
+      toast.success("Pedido excluído com sucesso!");
     } else {
-      alert(res.error);
+      toast.error(res.error);
     }
   }
 
@@ -199,6 +206,7 @@ export default function PedidosClientPage({
     ]);
 
     exportToCSV("printforge_pedidos.csv", headers, rows);
+    toast.success("Relatório CSV de pedidos gerado com sucesso!");
   };
 
   return (

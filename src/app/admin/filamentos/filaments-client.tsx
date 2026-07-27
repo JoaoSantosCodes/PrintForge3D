@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 import { Plus, Edit2, Trash2, Boxes, Palette, Tag, DollarSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
@@ -46,15 +47,22 @@ export default function FilamentsClientPage({ initialFilaments }: { initialFilam
     setLoading(false);
     if (res?.error) {
       setErrorMsg(res.error);
+      toast.error(res.error);
     } else {
+      toast.success(editingFilament ? "Filamento atualizado com sucesso!" : "Filamento cadastrado com sucesso!");
       setIsModalOpen(false);
     }
   };
 
   const confirmDelete = async () => {
     if (deletingFilament) {
-      await deleteFilamentAction(deletingFilament.id);
+      const res = await deleteFilamentAction(deletingFilament.id);
       setDeletingFilament(null);
+      if (res?.error) {
+        toast.error(res.error);
+      } else {
+        toast.success("Filamento removido com sucesso!");
+      }
     }
   };
 

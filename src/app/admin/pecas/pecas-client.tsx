@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 import Link from "next/link";
 import Image from "next/image";
 import { Plus, Edit2, Trash2, Eye, EyeOff, Box, Tag, DollarSign, CheckCircle2, Clock, ShoppingBag, FileText, Copy, Download } from "lucide-react";
@@ -44,17 +45,32 @@ export default function PecasClientPage({
   });
 
   const handleTogglePublicada = async (id: string, atual: boolean) => {
-    await togglePublicacaoAction(id, !atual);
+    const res = await togglePublicacaoAction(id, !atual);
+    if (res?.error) {
+      toast.error(res.error);
+    } else {
+      toast.success(!atual ? "Peça publicada no catálogo público!" : "Peça removida do catálogo público.");
+    }
   };
 
   const handleStatusChange = async (id: string, status: string) => {
-    await updateStatusAction(id, status);
+    const res = await updateStatusAction(id, status);
+    if (res?.error) {
+      toast.error(res.error);
+    } else {
+      toast.success("Status da peça atualizado!");
+    }
   };
 
   const confirmDelete = async () => {
     if (deletingPeca) {
-      await deletePecaAction(deletingPeca.id);
+      const res = await deletePecaAction(deletingPeca.id);
       setDeletingPeca(null);
+      if (res?.error) {
+        toast.error(res.error);
+      } else {
+        toast.success("Peça removida com sucesso!");
+      }
     }
   };
 
