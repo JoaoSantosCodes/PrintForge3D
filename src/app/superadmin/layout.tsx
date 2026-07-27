@@ -1,7 +1,7 @@
 import { getCurrentProfile } from "@/lib/auth-server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { ShieldAlert, LayoutDashboard, Building2, Layers, LogOut, ArrowLeft } from "lucide-react";
+import { ShieldAlert, LayoutDashboard, Building2, Layers, Users, LogOut } from "lucide-react";
 import { logoutAction } from "@/app/actions/auth";
 
 export const dynamic = "force-dynamic";
@@ -52,6 +52,14 @@ export default async function SuperAdminLayout({
           >
             <Building2 className="w-4 h-4 text-cyan-400" />
             <span>Empresas</span>
+          </Link>
+
+          <Link
+            href="/superadmin/usuarios"
+            className="flex items-center gap-2 text-slate-300 hover:text-purple-400 px-3 py-1.5 rounded-lg hover:bg-slate-800/50 transition-colors"
+          >
+            <Users className="w-4 h-4 text-amber-400" />
+            <span>Usuários</span>
           </Link>
 
           <Link

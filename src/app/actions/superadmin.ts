@@ -156,7 +156,6 @@ export async function deletePlanoAction(id: string) {
   try {
     await verifySuperAdmin();
 
-    // Check if any company is assigned to this plan
     const count = await prisma.empresa.count({ where: { planoId: id } });
     if (count > 0) {
       return { error: `Não é possível excluir este plano pois ele está associado a ${count} empresa(s).` };
@@ -168,5 +167,126 @@ export async function deletePlanoAction(id: string) {
     return { success: true };
   } catch (err: any) {
     return { error: err?.message || "Erro ao excluir plano." };
+  }
+}
+
+// 5. GESTÃO DE USUÁRIOS (SUPER-ADMIN)
+export async function aprovarUsuarioSuperAdminAction(id: string) {
+  try {
+    await verifySuperAdmin();
+
+    const user = await prisma.profile.update({
+      where: { id },
+      data: {
+        status: "aprovado",
+        aprovadoEm: new Date(),
+      },
+    });
+
+    revalidatePath("/superadmin/usuarios");
+    revalidatePath("/superadmin");
+    revalidatePath("/admin/usuarios");
+    return { success: true, message: `Usuário ${user.nome || user.email} aprovado com sucesso!` };
+  } catch (err: any) {
+    return { error: err?.message || "Erro ao aprovar usuário." };
+  }
+}
+
+export async function alterarStatusUsuarioSuperAdminAction(id: string, novoStatus: string) {
+  try {
+    await verifySuperAdmin();
+
+    const statusValidos = ["aprovado", "pendente", "bloqueado"];
+    if (!statusValidos.includes(novoStatus)) {
+      return { error: "Status inválido." };
+    }
+
+    const user = await prisma.profile.update({
+      where: { id },
+      data: { status: novoStatus },
+    });
+
+    revalidatePath("/superadmin/usuarios");
+    revalidatePath("/superadmin");
+    return { success: true, message: `Status do usuário ${user.email} alterado para ${novoStatus}.` };
+  } catch (err: any) {
+    return { error: err?.message || "Erro ao alterar status do usuário." };
+  }
+}
+
+export async function alterarRoleUsuarioSuperAdminAction(id: string, novaRole: string) {
+  try {
+    await verifySuperAdmin();
+
+    const rolesValidas = ["super_admin", "admin", "usuario"];
+    if (!rolesValidas.includes(novaRole)) {
+      return { error: "Papel/Role inválido." };
+    }
+
+    const user = await prisma.profile.update({
+      where: { id },
+      data: { role: novaRole },
+    });
+
+    revalidatePath("/superadmin/usuarios");
+    revalidatePath("/superadmin");
+    return { success: true, message: `Papel do usuário ${user.email} alterado para ${novaRole}.` };
+  } catch (err: any) {
+    return { error: err?.message || "Erro ao alterar perfil do usuário." };
+  }
+}
+
+export async function vincularEmpresaUsuarioSuperAdminAction(id: string, empresaId: string | null) {
+  try {
+    await verifySuperAdmin();
+
+    if (empresaId) {
+      const empresa = await prisma.empresa.findUnique({ where: { id: empresaId } });
+      if (!empresa) return { error: "Empresa não encontrada." };
+    }
+
+    const user = await prisma.profile.update({
+      where: { id },
+      data: { empresaId: empresaId || null },
+    });
+
+    revalidatePath("/superadmin/usuarios");
+    return { success: true, message: `Vínculo de empresa do usuário ${user.email} atualizado.` };
+  } catch (err: any) {
+    return { error: err?.message || "Erro ao vincular empresa ao usuário." };
+  }
+}
+
+export async function deleteUsuarioSuperAdminAction(id: string) {
+  try {
+    const currentAdmin = await verifySuperAdmin();
+    if (currentAdmin.id === id) {
+      return { error: "Você não pode excluir sua própria conta de Super-Admin." };
+    }
+
+    await prisma.profile.delete({ where: { id } });
+
+    revalidatePath("/superadmin/usuarios");
+    revalidatePath("/superadmin");
+    return { success: true, message: "Usuário excluído com sucesso." };
+  } catch (err: any) {
+    return { error: err?.message || "Erro ao excluir usuário." };
+  }
+}
+
+export async function concluirSolicitacaoExclusaoSuperAdminAction(id: string, acao: "concluir" | "rejeitar") {
+  try {
+    await verifySuperAdmin();
+
+    const novoStatus = acao === "concluir" ? "concluido" : "rejeitado";
+    await prisma.solicitacaoExclusao.update({
+      where: { id },
+      data: { status: novoStatus },
+    });
+
+    revalidatePath("/superadmin/usuarios");
+    return { success: true, message: `Solicitação de exclusão marcada como ${novoStatus}.` };
+  } catch (err: any) {
+    return { error: err?.message || "Erro ao processar solicitação de exclusão." };
   }
 }
