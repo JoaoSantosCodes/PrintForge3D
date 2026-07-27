@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { Analytics } from "@vercel/analytics/react";
 import "./globals.css";
 
 export const viewport: Viewport = {
@@ -28,6 +29,7 @@ export default function RootLayout({
     <html lang="pt-BR" className="dark">
       <body className="bg-slate-950 text-slate-100 min-h-screen antialiased selection:bg-teal-500 selection:text-slate-950">
         {children}
+        <Analytics />
       </body>
     </html>
   );

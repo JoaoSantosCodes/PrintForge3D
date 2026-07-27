@@ -15,9 +15,14 @@ export default async function AdminUsuariosPage() {
     orderBy: { createdAt: "desc" },
   });
 
+  const solicitacoesExclusao = await prisma.solicitacaoExclusao.findMany({
+    orderBy: { createdAt: "desc" },
+  });
+
   return (
     <UsuariosClientPage
       usuarios={usuarios}
+      solicitacoesExclusao={solicitacoesExclusao}
       currentUserId={currentUserId}
     />
   );

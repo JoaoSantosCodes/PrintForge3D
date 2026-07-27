@@ -11,8 +11,14 @@ export default function CadastroPage() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!acceptedTerms) {
+      setErrorMsg("Você precisa aceitar os Termos de Uso e a Política de Privacidade para continuar.");
+      return;
+    }
     setLoading(true);
     setErrorMsg(null);
     setSuccessMsg(null);
@@ -129,8 +135,29 @@ export default function CadastroPage() {
                 </div>
               </div>
 
+              <div className="flex items-start gap-2.5 pt-1">
+                <input
+                  type="checkbox"
+                  id="acceptedTerms"
+                  checked={acceptedTerms}
+                  onChange={(e) => setAcceptedTerms(e.target.checked)}
+                  className="mt-0.5 w-4 h-4 rounded border-slate-700 bg-slate-950 text-teal-500 focus:ring-teal-500 focus:ring-offset-slate-900"
+                />
+                <label htmlFor="acceptedTerms" className="text-xs text-slate-400 leading-tight select-none">
+                  Li e concordo com os{" "}
+                  <Link href="/termos" target="_blank" className="text-teal-400 hover:underline font-medium">
+                    Termos de Uso
+                  </Link>{" "}
+                  e a{" "}
+                  <Link href="/privacidade" target="_blank" className="text-teal-400 hover:underline font-medium">
+                    Política de Privacidade
+                  </Link>
+                  .
+                </label>
+              </div>
+
               <div className="pt-2">
-                <Button variant="primary" type="submit" disabled={loading} className="w-full py-2.5">
+                <Button variant="primary" type="submit" disabled={loading || !acceptedTerms} className="w-full py-2.5">
                   {loading ? "Enviando cadastro..." : "Criar Minha Conta"}
                 </Button>
               </div>

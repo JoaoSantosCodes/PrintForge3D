@@ -152,6 +152,19 @@ export default function PecaForm({ printers, filaments, initialData }: PecaFormP
     }
 
     const formData = new FormData(e.currentTarget);
+    const fileInput = e.currentTarget.querySelector<HTMLInputElement>('input[type="file"][name="fotoFile"]');
+    const rawFile = fileInput?.files?.[0];
+
+    if (rawFile) {
+      try {
+        const { compressImageClient } = await import("@/lib/image-compression");
+        const compressedFile = await compressImageClient(rawFile, 1200, 0.8);
+        formData.set("fotoFile", compressedFile);
+      } catch (compressErr) {
+        console.warn("⚠️ Aviso na compressão client-side da imagem:", compressErr);
+      }
+    }
+
     const res = await savePecaAction(formData);
 
     setLoading(false);

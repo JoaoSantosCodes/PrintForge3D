@@ -13,15 +13,9 @@ export async function updateSession(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
-  const isPlaceholder =
-    !supabaseUrl ||
-    !supabaseAnonKey ||
-    supabaseUrl.includes("placeholder") ||
-    supabaseUrl.includes("your-supabase");
-
   let user = null;
 
-  if (!isPlaceholder && supabaseUrl && supabaseAnonKey) {
+  if (supabaseUrl && supabaseAnonKey && !supabaseUrl.includes("placeholder")) {
     try {
       const supabase = createServerClient(
         supabaseUrl,
@@ -49,16 +43,15 @@ export async function updateSession(request: NextRequest) {
       const { data } = await supabase.auth.getUser();
       user = data?.user || null;
     } catch (err) {
-      // Ignore Supabase connection errors safely in edge middleware
+      // Catch network/connection errors safely in edge middleware
     }
   }
 
-  const demoRole = request.cookies.get("demo_user_role")?.value;
   const pathname = request.nextUrl.pathname;
 
-  // Protect /admin routes (Requires authenticated session)
+  // Protect /admin routes (Requires 100% authenticated Supabase session)
   if (pathname.startsWith("/admin")) {
-    if (!user && demoRole !== "admin") {
+    if (!user) {
       const url = request.nextUrl.clone();
       url.pathname = "/login";
       url.searchParams.set("redirectTo", pathname);
@@ -66,9 +59,9 @@ export async function updateSession(request: NextRequest) {
     }
   }
 
-  // Protect /pedidos routes (Requires authenticated session)
+  // Protect /pedidos routes (Requires 100% authenticated Supabase session)
   if (pathname.startsWith("/pedidos")) {
-    if (!user && !demoRole) {
+    if (!user) {
       const url = request.nextUrl.clone();
       url.pathname = "/login";
       url.searchParams.set("redirectTo", pathname);

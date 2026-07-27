@@ -35,6 +35,9 @@ interface AvaliacaoData {
 interface PedidoUsuario {
   id: string;
   quantidade: number;
+  precoAcordado: number | null;
+  pago?: boolean;
+  cupomCodigo?: string | null;
   status: string;
   observacoes: string | null;
   createdAt: string;
@@ -97,8 +100,10 @@ const STATUS_CONFIG: Record<
 
 export function PedidosUsuarioClient({
   pedidos,
+  chavePix,
 }: {
   pedidos: PedidoUsuario[];
+  chavePix?: string | null;
 }) {
   const [cancelModalPedidoId, setCancelModalPedidoId] = useState<string | null>(null);
   const [cancelling, setCancelling] = useState(false);
@@ -218,6 +223,55 @@ export function PedidosUsuarioClient({
                       </p>
                     </div>
                   </div>
+
+                  {/* PIX Payment Banner if Pronto or Aguardando Pagamento */}
+                  {(pedido.status === "pronto" || pedido.status === "aguardando_pagamento") && (
+                    <div className="p-4 bg-teal-500/10 border border-teal-500/20 rounded-2xl space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-xs font-bold text-teal-300">
+                          <CheckCircle2 className="w-4 h-4 text-teal-400" />
+                          <span>Pagamento via PIX</span>
+                        </div>
+                        <Badge variant={pedido.pago ? "success" : "warning"}>
+                          {pedido.pago ? "Pagamento Confirmado ✅" : "Aguardando Pagamento ⏳"}
+                        </Badge>
+                      </div>
+
+                      {pedido.precoAcordado && (
+                        <p className="text-xs text-slate-300 font-semibold">
+                          Valor Total: <strong className="text-teal-300 text-sm">R$ {pedido.precoAcordado.toFixed(2)}</strong>
+                          {pedido.cupomCodigo && <span className="ml-2 text-[10px] text-teal-400 font-mono">(Cupom {pedido.cupomCodigo} aplicado)</span>}
+                        </p>
+                      )}
+
+                      {chavePix && !pedido.pago && (
+                        <div className="space-y-2 pt-1 border-t border-teal-500/20">
+                          <p className="text-[11px] text-slate-400 font-medium">
+                            Chave PIX para pagamento:
+                          </p>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="text"
+                              readOnly
+                              value={chavePix}
+                              className="flex-1 px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-teal-300 font-mono"
+                            />
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              className="text-xs shrink-0"
+                              onClick={() => {
+                                navigator.clipboard.writeText(chavePix);
+                                alert("Chave PIX copiada para a área de transferência!");
+                              }}
+                            >
+                              Copiar Chave PIX 📋
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   {pedido.observacoes && (
                     <div className="p-3 bg-slate-950/80 border border-slate-800/80 rounded-xl text-xs text-slate-400 italic">

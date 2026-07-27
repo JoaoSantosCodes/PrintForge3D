@@ -52,6 +52,8 @@ interface Pedido {
   clienteNome: string;
   clienteContato: string | null;
   status: string;
+  pago?: boolean;
+  cupomCodigo?: string | null;
   pecaId: string;
   peca: Peca;
   quantidade: number;
@@ -74,9 +76,11 @@ const STATUS_COLUMNS = [
 export default function PedidosClientPage({
   initialPedidos,
   pecas,
+  chavePix,
 }: {
   initialPedidos: Pedido[];
   pecas: Peca[];
+  chavePix?: string | null;
 }) {
   const [pedidos, setPedidos] = useState<Pedido[]>(initialPedidos);
   const [searchTerm, setSearchTerm] = useState("");
@@ -373,6 +377,29 @@ export default function PedidosClientPage({
                               <span className="font-bold text-teal-400">
                                 {pedido.precoAcordado ? formatarMoeda(pedido.precoAcordado) : "A combinar"}
                               </span>
+                            </div>
+
+                            {/* Payment Status Badge & Admin Toggle */}
+                            <div className="pt-1.5 border-t border-slate-800/80 flex items-center justify-between">
+                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                                pedido.pago
+                                  ? "bg-teal-500/10 border-teal-500/20 text-teal-300"
+                                  : "bg-amber-500/10 border-amber-500/20 text-amber-300"
+                              }`}>
+                                {pedido.pago ? "Pago ✅" : "Aguardando Pagamento ⏳"}
+                              </span>
+
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  const { confirmarPagamentoAction } = await import("@/app/actions/pedidos");
+                                  await confirmarPagamentoAction(pedido.id, !pedido.pago);
+                                  setPedidos(prev => prev.map(p => p.id === pedido.id ? { ...p, pago: !p.pago } : p));
+                                }}
+                                className="text-[10px] font-semibold text-cyan-400 hover:underline"
+                              >
+                                {pedido.pago ? "Marcar Pendente" : "Confirmar Pagamento"}
+                              </button>
                             </div>
                           </div>
 

@@ -108,104 +108,61 @@ export async function loginAction(formData: FormData) {
       }
     };
 
-    // 2. Autenticação via Supabase Auth (com suporte a Demo Mode / Fallback local)
-    let authUser: any = null;
-    let supabaseErrorMsg = "";
+    // 2. Autenticação estrita via Supabase Auth
+    const supabase = await createClient();
+    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
 
-    const isDemoMode = process.env.DEMO_MODE === "true" || process.env.DEMO_MODE === "1";
-
-    try {
-      const supabase = await createClient();
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (authError) {
-        supabaseErrorMsg = authError.message || "";
-      } else {
-        authUser = authData.user;
+    if (authError || !authData?.user) {
+      recordFailedAttempt();
+      const msg = authError?.message || "";
+      if (msg.toLowerCase().includes("email not confirmed") || msg.toLowerCase().includes("email_not_confirmed")) {
+        return { error: "Confirme seu e-mail antes de entrar." };
       }
-    } catch (err: any) {
-      supabaseErrorMsg = err?.message || "Conexão indisponível com servidor Supabase Auth";
+      if (msg.toLowerCase().includes("invalid login credentials")) {
+        return { error: "E-mail ou senha incorretos." };
+      }
+      return {
+        error: msg || "Falha na autenticação. Verifique suas credenciais.",
+      };
     }
+
+    const authUser = authData.user;
 
     // 3. Verificação do Profile no Prisma DB
-    let profile = null;
-    try {
-      profile = await prisma.profile.findUnique({
-        where: { email },
-      });
-    } catch (dbErr: any) {
-      console.error("Erro de banco de dados ao buscar perfil:", dbErr?.message);
-    }
+    let profile = await prisma.profile.findUnique({
+      where: { email },
+    }).catch(() => null);
 
-    // Se o Supabase Auth falhou (por ser URL demo/unreachable/placeholder ou erro de credencial no Supabase)
-    if (!authUser) {
-      const isUnreachable =
-        supabaseErrorMsg.toLowerCase().includes("fetch failed") ||
-        supabaseErrorMsg.toLowerCase().includes("connect") ||
-        supabaseErrorMsg.toLowerCase().includes("placeholder");
-
-      // Permite login local se o perfil existe no Prisma e estamos em DEMO_MODE ou o servidor remoto está inacessível
-      if (profile && (isDemoMode || isUnreachable)) {
-        // Login aceito via banco de dados local (Modo Demo / Offline)
-      } else {
-        recordFailedAttempt();
-        if (supabaseErrorMsg.toLowerCase().includes("email not confirmed") || supabaseErrorMsg.toLowerCase().includes("email_not_confirmed")) {
-          return { error: "Confirme seu e-mail antes de entrar." };
-        }
-        if (supabaseErrorMsg.toLowerCase().includes("invalid login credentials")) {
-          return { error: "E-mail ou senha incorretos." };
-        }
-        return {
-          error: supabaseErrorMsg || "Falha na autenticação. Verifique suas credenciais e variáveis de ambiente na Vercel.",
-        };
-      }
-    }
-
-    if (!profile && authUser) {
-      try {
-        profile = await prisma.profile.create({
-          data: {
-            id: authUser.id,
-            email: authUser.email || email,
-            nome: authUser.user_metadata?.nome || email.split("@")[0],
-            role: "usuario",
-            status: "pendente",
-          },
-        });
-      } catch {}
+    if (!profile) {
+      profile = await prisma.profile.create({
+        data: {
+          id: authUser.id,
+          email: authUser.email || email,
+          nome: authUser.user_metadata?.nome || email.split("@")[0],
+          role: "usuario",
+          status: "pendente",
+        },
+      }).catch(() => null);
     }
 
     if (!profile || profile.status === "pendente") {
-      try {
-        const supabase = await createClient();
-        await supabase.auth.signOut();
-      } catch {}
+      await supabase.auth.signOut().catch(() => {});
       return {
         error: "Sua conta ainda está aguardando aprovação de um administrador.",
       };
     }
 
     if (profile.status === "bloqueado") {
-      try {
-        const supabase = await createClient();
-        await supabase.auth.signOut();
-      } catch {}
+      await supabase.auth.signOut().catch(() => {});
       return {
         error: "Sua conta foi bloqueada. Entre em contato com o administrador.",
       };
     }
 
     loginAttemptsMap.delete(email);
-
-    // Armazena cookie de sessão local/demo para que a middleware conceda o acesso
-    try {
-      const cookieStore = cookies();
-      cookieStore.set("demo_user_role", profile.role, { path: "/", httpOnly: true, sameSite: "lax" });
-      cookieStore.set("demo_user_email", profile.email, { path: "/", httpOnly: true, sameSite: "lax" });
-    } catch {}
 
     const redirectUrl = profile.role === "admin"
       ? (targetRedirect.startsWith("/admin") ? targetRedirect : "/admin")

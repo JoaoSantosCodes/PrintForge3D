@@ -73,7 +73,6 @@ model Tinta {
   createdAt DateTime @default(now())
 }
 
-
 model Peca {
   id         String   @id @default(cuid())
   nome       String
@@ -94,7 +93,9 @@ model Pedido {
   id             String     @id @default(cuid())
   clienteNome    String
   clienteContato String?    // telefone/whatsapp
-  status         String     @default("pendente") // pendente | em_impressao | pintando | pronto | enviado | entregue | cancelado
+  status         String     @default("pendente") // pendente | aguardando_pagamento | em_impressao | pintando | pronto | enviado | entregue | cancelado
+  pago           Boolean    @default(false)
+  cupomCodigo    String?
   pecaId         String
   peca           Peca       @relation(fields: [pecaId], references: [id], onDelete: Cascade)
   usuarioId      String?
@@ -143,4 +144,28 @@ model CustoEmbalagem {
   pecaId            String  @unique
   materialDescricao String?
   custoUnitario     Float
+}
+
+model SolicitacaoExclusao {
+  id        String   @id @default(cuid())
+  usuarioId String
+  email     String
+  motivo    String?
+  status    String   @default("pendente") // pendente | concluido | rejeitado
+  createdAt DateTime @default(now())
+}
+
+model Configuracao {
+  id        String   @id @default("global")
+  chavePix  String?
+  updatedAt DateTime @updatedAt
+}
+
+model Cupom {
+  id                 String    @id @default(cuid())
+  codigo             String    @unique
+  percentualDesconto Float
+  ativo              Boolean   @default(true)
+  validoAte          DateTime?
+  createdAt          DateTime  @default(now())
 }

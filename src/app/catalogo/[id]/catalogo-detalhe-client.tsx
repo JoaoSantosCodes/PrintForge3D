@@ -58,6 +58,9 @@ export function CatalogoDetalheClient({
   const [submitting, setSubmitting] = useState(false);
   const [orderSuccessId, setOrderSuccessId] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [cupomInput, setCupomInput] = useState("");
+  const [cupomAplicado, setCupomAplicado] = useState<{ codigo: string; percentualDesconto: number } | null>(null);
+  const [cupomError, setCupomError] = useState<string | null>(null);
 
   const totalAvaliacoes = avaliacoes.length;
   const mediaNotas =
@@ -77,7 +80,7 @@ export function CatalogoDetalheClient({
     setSubmitting(true);
     setErrorMsg(null);
 
-    const res = await criarPedidoClienteAction(peca.id, quantidade, observacoes);
+    const res = await criarPedidoClienteAction(peca.id, quantidade, observacoes, cupomAplicado?.codigo);
 
     setSubmitting(false);
     if (res?.error) {
@@ -318,6 +321,57 @@ export function CatalogoDetalheClient({
               placeholder="Ex: Gostaria na cor preta com preenchimento reforçado..."
               className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-100 placeholder-slate-600 focus:outline-none focus:border-teal-500 transition-colors"
             />
+          </div>
+
+          {/* Optional Coupon Code Field */}
+          <div className="pt-2 border-t border-slate-800 space-y-2">
+            <label className="block text-xs font-semibold text-slate-300">
+              Possui Código de Cupom? (Opcional)
+            </label>
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={cupomInput}
+                onChange={(e) => {
+                  setCupomInput(e.target.value.toUpperCase());
+                  setCupomAplicado(null);
+                  setCupomError(null);
+                }}
+                placeholder="Ex: PROMO10"
+                className="flex-1 px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-100 uppercase font-mono placeholder-slate-600 focus:outline-none focus:border-teal-500"
+              />
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                className="text-xs"
+                onClick={async () => {
+                  if (!cupomInput.trim()) return;
+                  const { validarCupomAction } = await import("@/app/actions/cupons");
+                  const res = await validarCupomAction(cupomInput);
+                  if (res?.error) {
+                    setCupomError(res.error);
+                    setCupomAplicado(null);
+                  } else if (res?.cupom) {
+                    setCupomAplicado(res.cupom);
+                    setCupomError(null);
+                  }
+                }}
+              >
+                Aplicar
+              </Button>
+            </div>
+
+            {cupomAplicado && (
+              <div className="p-2.5 bg-teal-500/10 border border-teal-500/20 rounded-xl text-xs text-teal-300 font-semibold flex items-center justify-between">
+                <span>Cupom <strong>{cupomAplicado.codigo}</strong> aplicado com sucesso!</span>
+                <span className="font-mono text-teal-400">-{cupomAplicado.percentualDesconto}%</span>
+              </div>
+            )}
+
+            {cupomError && (
+              <p className="text-xs text-rose-400 font-semibold">{cupomError}</p>
+            )}
           </div>
 
           <div className="pt-2 flex items-center justify-end gap-3">

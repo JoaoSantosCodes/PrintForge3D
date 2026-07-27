@@ -140,7 +140,28 @@ export async function deletePedidoAction(id: string) {
   }
 }
 
-export async function criarPedidoClienteAction(pecaId: string, quantidade: number, observacoes?: string) {
+export async function confirmarPagamentoAction(pedidoId: string, pago: boolean = true) {
+  try {
+    await prisma.pedido.update({
+      where: { id: pedidoId },
+      data: { pago },
+    });
+
+    revalidatePath("/admin/pedidos");
+    revalidatePath("/pedidos");
+    return { success: true };
+  } catch (err: any) {
+    return { error: err?.message || "Erro ao atualizar status de pagamento." };
+  }
+}
+
+export async function criarPedidoClienteAction(
+  pecaId: string,
+  quantidade: number,
+  observacoes?: string,
+  cupomCodigo?: string,
+  precoBaseUnitario?: number
+) {
   try {
     const supabase = await createClient();
     const { data: authData } = await supabase.auth.getUser();
@@ -168,6 +189,23 @@ export async function criarPedidoClienteAction(pecaId: string, quantidade: numbe
       return { error: "Peça não encontrada." };
     }
 
+    let precoFinalUnitario = precoBaseUnitario || null;
+    let cupomValido = null;
+
+    if (cupomCodigo) {
+      const codeClean = cupomCodigo.trim().toUpperCase();
+      const cupom = await prisma.cupom.findUnique({ where: { codigo: codeClean } });
+      if (cupom && cupom.ativo && (!cupom.validoAte || new Date() <= new Date(cupom.validoAte))) {
+        cupomValido = cupom.codigo;
+        if (precoFinalUnitario) {
+          const desconto = (precoFinalUnitario * cupom.percentualDesconto) / 100;
+          precoFinalUnitario = Math.max(0, precoFinalUnitario - desconto);
+        }
+      }
+    }
+
+    const valorTotalAcordado = precoFinalUnitario ? precoFinalUnitario * Math.max(1, quantidade) : null;
+
     const novoPedido = await prisma.pedido.create({
       data: {
         clienteNome: profile.nome || profile.email,
@@ -175,8 +213,11 @@ export async function criarPedidoClienteAction(pecaId: string, quantidade: numbe
         usuarioId: profile.id,
         pecaId: peca.id,
         quantidade: Math.max(1, quantidade || 1),
+        precoAcordado: valorTotalAcordado,
+        cupomCodigo: cupomValido,
         observacoes: observacoes || null,
         status: "pendente",
+        pago: false,
       },
     });
 

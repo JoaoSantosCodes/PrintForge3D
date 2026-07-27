@@ -163,6 +163,81 @@ export function PerfilClient({ profile }: PerfilClientProps) {
             </Button>
           </div>
         </form>
+
+        {/* Section LGPD - Meus Dados */}
+        <div className="pt-8 border-t border-slate-800 space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-base font-bold text-slate-100 flex items-center gap-2">
+                <ShieldCheck className="w-5 h-5 text-teal-400" /> Meus Dados & Privacidade (LGPD)
+              </h2>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Exerça seus direitos de titular de dados pessoais segundo a Lei Geral de Proteção de Dados.
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+            <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-3">
+              <div className="space-y-1">
+                <h3 className="text-xs font-bold text-slate-200">Exportar Meus Dados</h3>
+                <p className="text-[11px] text-slate-400">
+                  Baixe uma cópia completa dos seus dados cadastrais e histórico de pedidos em formato JSON.
+                </p>
+              </div>
+              <Button
+                variant="secondary"
+                size="sm"
+                className="w-full text-xs"
+                onClick={async () => {
+                  const { exportUserDataAction } = await import("@/app/actions/lgpd");
+                  const res = await exportUserDataAction();
+                  if (res?.error) {
+                    alert(res.error);
+                  } else if (res?.data) {
+                    const blob = new Blob([JSON.stringify(res.data, null, 2)], { type: "application/json" });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = `meus-dados-printforge3d-${Date.now()}.json`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                  }
+                }}
+              >
+                📥 Exportar Meus Dados (JSON)
+              </Button>
+            </div>
+
+            <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-3">
+              <div className="space-y-1">
+                <h3 className="text-xs font-bold text-rose-400">Solicitar Exclusão da Conta</h3>
+                <p className="text-[11px] text-slate-400">
+                  Envie uma solicitação para exclusão do seu cadastro e dados após a finalização de pedidos.
+                </p>
+              </div>
+              <Button
+                variant="danger"
+                size="sm"
+                className="w-full text-xs"
+                onClick={async () => {
+                  const motivo = prompt("Por favor, digite o motivo da solicitação de exclusão (opcional):");
+                  if (motivo !== null) {
+                    const { requestAccountDeletionAction } = await import("@/app/actions/lgpd");
+                    const res = await requestAccountDeletionAction(motivo);
+                    if (res?.error) {
+                      alert(res.error);
+                    } else if (res?.message) {
+                      alert(res.message);
+                    }
+                  }
+                }}
+              >
+                ⚠️ Solicitar Exclusão da Conta
+              </Button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

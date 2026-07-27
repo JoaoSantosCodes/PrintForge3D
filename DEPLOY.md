@@ -114,3 +114,14 @@ npx vercel --prod
 - **Sistema de Aprovação de Cadastros**: Todo novo cadastro de usuário via `/cadastro` inicia como `status="pendente"` e requer aprovação de um Administrador em `/admin/usuarios`.
 - **Middleware Protegido**: Bloqueio de rotas `/admin/**` para contas não administradoras ou pendentes/bloqueadas.
 - **Rate Limiting no Login**: Bloqueio de 1 minuto após 5 tentativas de login com erro.
+
+---
+
+## 💾 7. Backup Automático & Testes de Restauração de Banco de Dados (Supabase)
+
+- **Verificação de Backups**:
+  - Acesse o painel do Supabase em **Settings > Database > Backups**.
+  - Confirme que os backups diários automáticos (ou Point-in-Time Recovery - PITR no plano Pro) estão ativados.
+- **Procedimento de Teste de Restauração (Restore)**:
+  - Sugere-se testar a restauração de um backup descarregado (.sql) pelo menos uma vez em um projeto ou banco de dados de teste (staging), e nunca diretamente sobre a base de produção, para garantir a recuperabilidade dos dados da loja.
+

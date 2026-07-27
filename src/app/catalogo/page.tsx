@@ -3,6 +3,16 @@ import CatalogoClientPage from "./catalogo-client";
 
 export const dynamic = "force-dynamic";
 
+export const metadata = {
+  title: "Catálogo Público 3D — PrintForge 3D",
+  description: "Explore o catálogo de modelos e objetos 3D produzidos com alta precisão sob demanda.",
+  openGraph: {
+    title: "Catálogo Público 3D — PrintForge 3D",
+    description: "Explore o catálogo de modelos e objetos 3D produzidos com alta precisão sob demanda.",
+    type: "website",
+  },
+};
+
 export default async function CatalogoPage() {
   let pecas: any[] = [];
   try {
@@ -16,7 +26,6 @@ export default async function CatalogoPage() {
         fotoUrl: true,
         status: true,
         createdAt: true,
-        // CRITICAL SECURITY RULE: Do NOT include cost relations or financial fields here!
       },
       orderBy: { createdAt: "desc" },
     });

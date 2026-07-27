@@ -17,6 +17,8 @@ import {
   Users,
   User,
   FileText,
+  Ticket,
+  Settings,
 } from "lucide-react";
 import { logoutAction } from "@/app/actions/auth";
 import { getLowStockCountAction } from "@/app/actions/filaments";
@@ -52,6 +54,8 @@ export function Sidebar() {
     { label: "Filamentos", href: "/admin/filamentos", icon: Boxes, badge: lowStockCount > 0 ? `🔴 ${lowStockCount}` : null },
     { label: "Tintas & Pintura", href: "/admin/tintas", icon: Palette },
     { label: "Peças & Custos", href: "/admin/pecas", icon: Box },
+    { label: "Cupons", href: "/admin/cupons", icon: Ticket },
+    { label: "Configurações", href: "/admin/configuracoes", icon: Settings },
     { label: "Relatórios", href: "/admin/relatorios", icon: BarChart3 },
     { label: "Usuários", href: "/admin/usuarios", icon: Users, badge: pendingUsersCount > 0 ? `🔴 ${pendingUsersCount}` : null },
     { label: "Auditoria", href: "/admin/auditoria", icon: FileText },

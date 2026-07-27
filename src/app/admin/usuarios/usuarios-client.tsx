@@ -9,26 +9,29 @@ import {
   bloquearUsuarioAction,
   reativarUsuarioAction,
 } from "@/app/actions/usuarios";
+import { resolveDeletionRequestAction } from "@/app/actions/lgpd";
 import {
   Users,
   UserCheck,
   UserX,
   Clock,
   Shield,
-  User,
   CheckCircle2,
   AlertOctagon,
   Search,
-  Filter,
+  Trash2,
+  ShieldAlert,
 } from "lucide-react";
 
 interface UsuariosClientPageProps {
   usuarios: any[];
+  solicitacoesExclusao?: any[];
   currentUserId: string | null;
 }
 
 export default function UsuariosClientPage({
   usuarios,
+  solicitacoesExclusao = [],
   currentUserId,
 }: UsuariosClientPageProps) {
   const [filterStatus, setFilterStatus] = useState<string>("todos");
@@ -64,6 +67,15 @@ export default function UsuariosClientPage({
     if (res?.error) alert(res.error);
   };
 
+  const handleResolveDeletion = async (id: string, status: "concluido" | "rejeitado") => {
+    setActionLoadingId(id);
+    const res = await resolveDeletionRequestAction(id, status);
+    setActionLoadingId(null);
+    if (res?.error) alert(res.error);
+  };
+
+  const pendentesExclusao = solicitacoesExclusao.filter((s) => s.status === "pendente");
+
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
       {/* Top Header */}
@@ -73,10 +85,63 @@ export default function UsuariosClientPage({
             <Users className="w-8 h-8 text-teal-400" /> Gestão de Usuários & Perfis
           </h1>
           <p className="text-slate-400 text-sm mt-1">
-            Gerencie novos cadastros, aprove acessos e controle permissões da plataforma.
+            Gerencie novos cadastros, aprove acessos e trate solicitações de exclusão da LGPD.
           </p>
         </div>
       </div>
+
+      {/* LGPD Account Deletion Requests Section (If any) */}
+      {pendentesExclusao.length > 0 && (
+        <div className="bg-rose-500/10 border border-rose-500/20 rounded-3xl p-6 space-y-4">
+          <div className="flex items-center gap-2 text-rose-400 font-bold text-base">
+            <Trash2 className="w-5 h-5" />
+            <span>Solicitações de Exclusão de Conta Pendentes (LGPD)</span>
+            <span className="px-2 py-0.5 rounded-full text-xs bg-rose-500/20 text-rose-300 font-mono">
+              {pendentesExclusao.length}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {pendentesExclusao.map((req) => (
+              <div
+                key={req.id}
+                className="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3"
+              >
+                <div>
+                  <h4 className="font-bold text-slate-100 text-sm">{req.email}</h4>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Motivo: <span className="text-slate-300 italic">{req.motivo || "Não informado"}</span>
+                  </p>
+                  <p className="text-[10px] text-slate-500 mt-1">
+                    Data: {new Date(req.createdAt).toLocaleDateString("pt-BR")}
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2 pt-2 border-t border-slate-800">
+                  <Button
+                    variant="danger"
+                    size="sm"
+                    className="w-full text-xs"
+                    disabled={actionLoadingId === req.id}
+                    onClick={() => handleResolveDeletion(req.id, "concluido")}
+                  >
+                    Confirmar Exclusão
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="w-full text-xs"
+                    disabled={actionLoadingId === req.id}
+                    onClick={() => handleResolveDeletion(req.id, "rejeitado")}
+                  >
+                    Rejeitar
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Filter and Search Bar */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-slate-900 border border-slate-800 rounded-2xl p-4">

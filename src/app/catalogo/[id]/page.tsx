@@ -5,6 +5,27 @@ import { CatalogoDetalheClient } from "./catalogo-detalhe-client";
 
 export const dynamic = "force-dynamic";
 
+export async function generateMetadata({ params }: { params: { id: string } }) {
+  const peca = await prisma.peca.findFirst({
+    where: { id: params.id, publicada: true },
+    select: { nome: true, descricao: true, fotoUrl: true },
+  });
+
+  if (!peca) {
+    return { title: "Peça Não Encontrada — PrintForge 3D" };
+  }
+
+  return {
+    title: `${peca.nome} — PrintForge 3D`,
+    description: peca.descricao || `Confira os detalhes de ${peca.nome} no catálogo 3D.`,
+    openGraph: {
+      title: `${peca.nome} — PrintForge 3D`,
+      description: peca.descricao || `Confira os detalhes de ${peca.nome} no catálogo 3D.`,
+      images: peca.fotoUrl ? [{ url: peca.fotoUrl }] : [],
+    },
+  };
+}
+
 export default async function CatalogoDetalhePage({ params }: { params: { id: string } }) {
   const peca = await prisma.peca.findFirst({
     where: {
