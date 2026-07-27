@@ -21,7 +21,7 @@ export async function getCurrentProfile() {
             { email: user.email ? user.email.toLowerCase() : "" },
           ],
         },
-      });
+      }).catch(() => null);
       if (profile) return profile;
     }
   } catch {}
@@ -35,14 +35,14 @@ export async function getCurrentProfile() {
     if (demoEmail) {
       const profile = await prisma.profile.findUnique({
         where: { email: demoEmail.toLowerCase() },
-      });
+      }).catch(() => null);
       if (profile) return profile;
     }
 
     if (demoRole === "admin") {
       const adminProfile = await prisma.profile.findFirst({
         where: { role: "admin", status: "aprovado" },
-      });
+      }).catch(() => null);
       if (adminProfile) return adminProfile;
     }
   } catch {}
