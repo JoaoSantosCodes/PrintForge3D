@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { createClient } from "@/lib/supabase/server";
+import { getCurrentProfile } from "@/lib/auth-server";
 import { notFound } from "next/navigation";
 import { CatalogoDetalheClient } from "./catalogo-detalhe-client";
 
@@ -55,27 +55,13 @@ export default async function CatalogoDetalhePage({ params }: { params: { id: st
   let isLoggedIn = false;
 
   try {
-    const supabase = await createClient();
-    const { data } = await supabase.auth.getUser();
-    const user = data?.user;
-
-    if (user) {
-      const profile = await prisma.profile.findFirst({
-        where: {
-          OR: [
-            { id: user.id },
-            { email: user.email ? user.email.toLowerCase() : "" },
-          ],
-        },
-      });
-
-      if (profile && profile.status === "aprovado") {
-        isLoggedIn = true;
-        userProfile = {
-          nome: profile.nome,
-          email: profile.email,
-        };
-      }
+    const profile = await getCurrentProfile();
+    if (profile && profile.status === "aprovado") {
+      isLoggedIn = true;
+      userProfile = {
+        nome: profile.nome,
+        email: profile.email,
+      };
     }
   } catch {}
 

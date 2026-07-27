@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { createClient } from "@/lib/supabase/server";
+import { getCurrentProfile } from "@/lib/auth-server";
 import { redirect } from "next/navigation";
 import { PublicNavbar } from "@/components/catalogo/navbar";
 import { PedidosUsuarioClient } from "./pedidos-usuario-client";
@@ -7,25 +7,7 @@ import { PedidosUsuarioClient } from "./pedidos-usuario-client";
 export const dynamic = "force-dynamic";
 
 export default async function PedidosUsuarioPage() {
-  let user = null;
-  try {
-    const supabase = await createClient();
-    const { data } = await supabase.auth.getUser();
-    user = data?.user || null;
-  } catch {}
-
-  if (!user) {
-    redirect("/login?redirectTo=/pedidos");
-  }
-
-  const profile = await prisma.profile.findFirst({
-    where: {
-      OR: [
-        { id: user.id },
-        { email: user.email ? user.email.toLowerCase() : "" },
-      ],
-    },
-  });
+  const profile = await getCurrentProfile();
 
   if (!profile || profile.status !== "aprovado") {
     redirect("/login?error=Sua conta precisa estar aprovada por um administrador para visualizar seus pedidos.");

@@ -1,5 +1,4 @@
-import { prisma } from "@/lib/prisma";
-import { createClient } from "@/lib/supabase/server";
+import { getCurrentProfile } from "@/lib/auth-server";
 import { redirect } from "next/navigation";
 import { PublicNavbar } from "@/components/catalogo/navbar";
 import { PerfilClient } from "./perfil-client";
@@ -7,28 +6,10 @@ import { PerfilClient } from "./perfil-client";
 export const dynamic = "force-dynamic";
 
 export default async function PerfilPage() {
-  let user = null;
-  try {
-    const supabase = await createClient();
-    const { data } = await supabase.auth.getUser();
-    user = data?.user || null;
-  } catch {}
-
-  if (!user) {
-    redirect("/login?redirectTo=/perfil");
-  }
-
-  const profile = await prisma.profile.findFirst({
-    where: {
-      OR: [
-        { id: user.id },
-        { email: user.email ? user.email.toLowerCase() : "" },
-      ],
-    },
-  });
+  const profile = await getCurrentProfile();
 
   if (!profile) {
-    redirect("/login");
+    redirect("/login?redirectTo=/perfil");
   }
 
   const formattedProfile = {
