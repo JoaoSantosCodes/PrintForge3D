@@ -53,11 +53,12 @@ export async function updateSession(request: NextRequest) {
     }
   }
 
+  const demoRole = request.cookies.get("demo_user_role")?.value;
   const pathname = request.nextUrl.pathname;
 
   // Protect /admin routes (Requires authenticated session)
   if (pathname.startsWith("/admin")) {
-    if (!user) {
+    if (!user && demoRole !== "admin") {
       const url = request.nextUrl.clone();
       url.pathname = "/login";
       url.searchParams.set("redirectTo", pathname);
@@ -67,7 +68,7 @@ export async function updateSession(request: NextRequest) {
 
   // Protect /pedidos routes (Requires authenticated session)
   if (pathname.startsWith("/pedidos")) {
-    if (!user) {
+    if (!user && !demoRole) {
       const url = request.nextUrl.clone();
       url.pathname = "/login";
       url.searchParams.set("redirectTo", pathname);

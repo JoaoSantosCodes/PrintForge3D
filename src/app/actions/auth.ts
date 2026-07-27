@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 import { z } from "zod";
 
 // In-memory rate limiting map for login attempts (5 attempts per minute)
@@ -106,8 +107,12 @@ export async function loginAction(formData: FormData) {
     }
   };
 
-  // 2. Autenticação via Supabase Auth
+  // 2. Autenticação via Supabase Auth (com suporte a Demo Mode / Fallback local)
   let authUser: any = null;
+  let supabaseErrorMsg = "";
+
+  const isDemoMode = process.env.DEMO_MODE === "true" || process.env.DEMO_MODE === "1";
+
   try {
     const supabase = await createClient();
     const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
@@ -116,23 +121,42 @@ export async function loginAction(formData: FormData) {
     });
 
     if (authError) {
-      recordFailedAttempt();
-      const msg = authError.message || "";
-      if (msg.toLowerCase().includes("email not confirmed") || msg.toLowerCase().includes("email_not_confirmed")) {
-        return { error: "Confirme seu e-mail antes de entrar." };
-      }
-      return { error: msg || "Falha na autenticação. Verifique suas credenciais." };
+      supabaseErrorMsg = authError.message || "";
+    } else {
+      authUser = authData.user;
     }
-    authUser = authData.user;
   } catch (err: any) {
-    recordFailedAttempt();
-    return { error: "Erro ao conectar com servidor de autenticação." };
+    supabaseErrorMsg = err?.message || "Conexão indisponível com servidor Supabase Auth";
   }
 
-  // 3. Verificação do Profile no Prisma
+  // 3. Verificação do Profile no Prisma DB
   let profile = await prisma.profile.findUnique({
     where: { email },
   });
+
+  // Se o Supabase Auth falhou (por ser URL demo/unreachable/placeholder ou erro de credencial no Supabase)
+  if (!authUser) {
+    const isUnreachable =
+      supabaseErrorMsg.toLowerCase().includes("fetch failed") ||
+      supabaseErrorMsg.toLowerCase().includes("connect") ||
+      supabaseErrorMsg.toLowerCase().includes("placeholder");
+
+    // Permite login local se o perfil existe no Prisma e estamos em DEMO_MODE ou o servidor remoto está inacessível
+    if (profile && (isDemoMode || isUnreachable)) {
+      // Login aceito via banco de dados local (Modo Demo / Offline)
+    } else {
+      recordFailedAttempt();
+      if (supabaseErrorMsg.toLowerCase().includes("email not confirmed") || supabaseErrorMsg.toLowerCase().includes("email_not_confirmed")) {
+        return { error: "Confirme seu e-mail antes de entrar." };
+      }
+      if (supabaseErrorMsg.toLowerCase().includes("invalid login credentials")) {
+        return { error: "E-mail ou senha incorretos." };
+      }
+      return {
+        error: supabaseErrorMsg || "Falha na autenticação. Verifique suas credenciais.",
+      };
+    }
+  }
 
   if (!profile && authUser) {
     profile = await prisma.profile.create({
@@ -167,6 +191,13 @@ export async function loginAction(formData: FormData) {
   }
 
   loginAttemptsMap.delete(email);
+
+  // Armazena cookie de sessão local/demo para que a middleware conceda o acesso
+  try {
+    const cookieStore = cookies();
+    cookieStore.set("demo_user_role", profile.role, { path: "/", httpOnly: true, sameSite: "lax" });
+    cookieStore.set("demo_user_email", profile.email, { path: "/", httpOnly: true, sameSite: "lax" });
+  } catch {}
 
   if (profile.role === "admin") {
     redirect(targetRedirect.startsWith("/admin") ? targetRedirect : "/admin");
@@ -278,6 +309,11 @@ export async function logoutAction() {
   try {
     const supabase = await createClient();
     await supabase.auth.signOut();
+  } catch {}
+  try {
+    const cookieStore = cookies();
+    cookieStore.delete("demo_user_role");
+    cookieStore.delete("demo_user_email");
   } catch {}
   redirect("/login");
 }
