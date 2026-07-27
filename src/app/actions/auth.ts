@@ -129,16 +129,34 @@ export async function loginAction(formData: FormData) {
       where: { email },
     }).catch(() => null);
 
+    const adminEmail = (process.env.ADMIN_EMAIL || "admin@printforge3d.com").toLowerCase();
+    const superAdminEmail = (process.env.SUPERADMIN_EMAIL || "superadmin@printforge3d.com").toLowerCase();
+
+    const isSystemAdmin = email === adminEmail;
+    const isSystemSuperAdmin = email === superAdminEmail;
+
     if (!profile) {
+      const defaultRole = isSystemSuperAdmin ? "super_admin" : isSystemAdmin ? "admin" : "usuario";
+      const defaultStatus = (isSystemAdmin || isSystemSuperAdmin) ? "aprovado" : "pendente";
+
       profile = await prisma.profile.create({
         data: {
           id: authUser.id,
           email: authUser.email || email,
           nome: authUser.user_metadata?.nome || email.split("@")[0],
-          role: "usuario",
-          status: "pendente",
+          role: defaultRole,
+          status: defaultStatus,
         },
       }).catch(() => null);
+    } else if ((isSystemAdmin || isSystemSuperAdmin) && profile.status === "pendente") {
+      const targetRole = isSystemSuperAdmin ? "super_admin" : "admin";
+      profile = await prisma.profile.update({
+        where: { id: profile.id },
+        data: {
+          role: targetRole,
+          status: "aprovado",
+        },
+      }).catch(() => profile);
     }
 
     if (!profile || profile.status === "pendente") {
