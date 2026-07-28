@@ -110,3 +110,30 @@ export async function getEmpresaIdAtualOptional(): Promise<string | null> {
   const profile = await getCurrentProfile();
   return profile?.empresaId || null;
 }
+
+export async function verifyAuthenticated() {
+  const profile = await getCurrentProfile();
+  if (!profile) {
+    throw new Error("Acesso não autorizado. Autenticação necessária.");
+  }
+  return profile;
+}
+
+export async function verifyCompanyAdmin() {
+  const profile = await verifyAuthenticated();
+  if (profile.role !== "admin" && profile.role !== "super_admin") {
+    throw new Error("Acesso negado. Apenas administradores da empresa têm acesso.");
+  }
+  if (profile.role !== "super_admin" && !profile.empresaId) {
+    throw new Error("Empresa não vinculada a esta conta.");
+  }
+  return profile;
+}
+
+export async function verifySuperAdmin() {
+  const profile = await getCurrentProfile();
+  if (!profile || profile.role !== "super_admin") {
+    throw new Error("Acesso negado. Apenas o Super-Admin possui permissão para esta ação.");
+  }
+  return profile;
+}
