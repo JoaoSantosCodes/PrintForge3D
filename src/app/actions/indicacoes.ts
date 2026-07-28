@@ -1,48 +1,23 @@
 "use server";
 
 import { getCurrentProfile } from "@/lib/auth-server";
-import { prisma } from "@/lib/prisma";
-import { getAffiliateCenterData } from "@/modules/referrals/services/affiliateService";
-import { revalidatePath } from "next/cache";
+import { getVendedorRewardsData } from "@/modules/referrals/services/rewardsService";
 
 export async function getPerfilIndicacoesAction() {
   try {
     const profile = await getCurrentProfile();
-    if (!profile) {
+    if (!profile || !profile.empresaId) {
       return { error: "Usuário não autenticado." };
     }
 
-    const affiliateData = await getAffiliateCenterData(profile.id);
+    const rewardsData = await getVendedorRewardsData(profile.empresaId);
 
     return {
       success: true,
       profileId: profile.id,
-      affiliateData,
+      rewardsData,
     };
   } catch (err: any) {
     return { error: err?.message || "Erro ao carregar dados de indicação." };
-  }
-}
-
-export async function salvarPosicaoPreferencialAction(posicao: "auto" | "esquerda" | "direita") {
-  try {
-    const profile = await getCurrentProfile();
-    if (!profile) {
-      return { error: "Usuário não autenticado." };
-    }
-
-    if (!["auto", "esquerda", "direita"].includes(posicao)) {
-      return { error: "Posição inválida." };
-    }
-
-    await prisma.profile.update({
-      where: { id: profile.id },
-      data: { posicaoPreferencial: posicao },
-    });
-
-    revalidatePath("/admin/indicacoes");
-    return { success: true, message: `Preferência de perna alterada para: ${posicao.toUpperCase()}` };
-  } catch (err: any) {
-    return { error: err?.message || "Erro ao salvar preferência de perna." };
   }
 }

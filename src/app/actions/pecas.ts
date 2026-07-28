@@ -179,6 +179,8 @@ export async function savePecaAction(formData: FormData) {
         return { error: limitCheck.message };
       }
 
+      const countPecasAntes = await prisma.peca.count({ where: { empresaId } });
+
       peca = await prisma.peca.create({
         data: {
           empresaId,
@@ -212,6 +214,21 @@ export async function savePecaAction(formData: FormData) {
           },
         },
       });
+
+      if (countPecasAntes === 0) {
+        const { concederPontos } = await import("@/lib/rewards");
+        const referralEvent = await prisma.referralEvent.findFirst({
+          where: { indicadoEmpresaId: empresaId },
+        });
+        if (referralEvent) {
+          await concederPontos(
+            referralEvent.indicadorEmpresaId,
+            "primeiro_produto",
+            peca.id,
+            "Bônus pelo primeiro produto cadastrado pela empresa indicada"
+          );
+        }
+      }
     }
 
     if (v.printerId && v.tempoHorasImpressao > 0) {

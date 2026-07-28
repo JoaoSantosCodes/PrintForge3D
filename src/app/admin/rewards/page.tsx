@@ -1,36 +1,32 @@
-import { getCurrentProfile } from "@/lib/auth-server";
-import { getRewardsDashboardData } from "@/modules/referrals/services/rewardsService";
-import RewardsClientPage from "./rewards-client";
+import { getCurrentProfile, getEmpresaIdAtual } from "@/lib/auth-server";
+import { getVendedorRewardsData } from "@/modules/referrals/services/rewardsService";
+import { redirect } from "next/navigation";
+import VendedorRewardsClient from "./rewards-client";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminRewardsPage() {
-  let rewardsData: any = null;
+  const profile = await getCurrentProfile();
 
-  try {
-    const profile = await getCurrentProfile();
-    if (profile) {
-      rewardsData = await getRewardsDashboardData(profile.id);
+  if (!profile) {
+    redirect("/login?redirectTo=/admin/rewards");
+  }
+
+  let empresaId = profile.empresaId;
+  if (!empresaId && profile.role !== "super_admin") {
+    try {
+      empresaId = await getEmpresaIdAtual();
+    } catch {
+      redirect("/admin");
     }
-  } catch (err) {
-    console.warn("Aviso ao carregar PrintForge Rewards:", err);
   }
 
-  if (!rewardsData) {
-    rewardsData = {
-      saldoPontos: 0,
-      nivelAtual: { nome: "Bronze", slug: "bronze", pontosMinimos: 0, icone: "🥉", cor: "amber", beneficio: "Acesso ao catálogo base", badge: "Iniciante Maker" },
-      proximoNivel: { nome: "Prata", slug: "prata", pontosMinimos: 500, icone: "🥈", cor: "slate", beneficio: "Desconto de 5%", badge: "Maker Prata" },
-      pontosFaltantes: 500,
-      progressoPercentual: 0,
-      catalogo: [],
-      transacoes: [],
-      resgates: [],
-      missoes: [],
-      conquistas: [],
-      niveis: [],
-    };
+  // Se for superadmin acidentalmente entrando em /admin/rewards, usar empresa padrão ou redirecionar
+  if (!empresaId) {
+    empresaId = "loja-principal";
   }
 
-  return <RewardsClientPage data={rewardsData} />;
+  const rewardsData = await getVendedorRewardsData(empresaId);
+
+  return <VendedorRewardsClient data={rewardsData} />;
 }

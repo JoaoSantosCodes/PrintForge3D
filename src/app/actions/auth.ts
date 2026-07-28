@@ -445,8 +445,25 @@ export async function atualizarPerfilAction(nome: string, newPassword?: string) 
       }
     }
 
+    const targetProfile = await prisma.profile.findFirst({
+      where: {
+        OR: [{ id: user.id }, { email: user.email ? user.email.toLowerCase() : "" }],
+      },
+    });
+
+    if (targetProfile?.empresaId && nomeTrimmed.length >= 3) {
+      const { concederPontos } = await import("@/lib/rewards");
+      await concederPontos(
+        targetProfile.empresaId,
+        "perfil_completo",
+        targetProfile.id,
+        "Bônus por preenchimento completo do perfil"
+      ).catch(() => null);
+    }
+
     revalidatePath("/perfil");
     revalidatePath("/admin/perfil");
+    revalidatePath("/admin/rewards");
     revalidatePath("/admin");
     revalidatePath("/catalogo");
     return { success: true, message: "Perfil atualizado com sucesso!" };

@@ -1,4 +1,5 @@
 import { prisma } from "./prisma";
+import { concederPontos, garantirCodigoIndicacaoEmpresa } from "./rewards";
 
 export function gerarCodigoIndicacaoAleatorio(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -9,97 +10,64 @@ export function gerarCodigoIndicacaoAleatorio(): string {
   return `PRINT-${sufixo}`;
 }
 
-export async function garantirCodigoIndicacao(profileId: string): Promise<string> {
-  const profile = await prisma.profile.findUnique({
-    where: { id: profileId },
-    select: { codigoIndicacao: true },
-  });
-
-  if (profile?.codigoIndicacao) {
-    return profile.codigoIndicacao;
-  }
-
-  let novoCodigo = gerarCodigoIndicacaoAleatorio();
-  let existe = await prisma.profile.findUnique({ where: { codigoIndicacao: novoCodigo } });
-
-  while (existe) {
-    novoCodigo = gerarCodigoIndicacaoAleatorio();
-    existe = await prisma.profile.findUnique({ where: { codigoIndicacao: novoCodigo } });
-  }
-
-  await prisma.profile.update({
-    where: { id: profileId },
-    data: { codigoIndicacao: novoCodigo },
-  }).catch(() => {});
-
-  return novoCodigo;
-}
-
-export async function determinarPernaAlocacao(
-  indicadorId: string,
-  pernaSolicitada?: string | null
-): Promise<"esquerda" | "direita"> {
-  if (pernaSolicitada === "esquerda" || pernaSolicitada === "direita") {
-    return pernaSolicitada;
-  }
-
-  const indicador = await prisma.profile.findUnique({
-    where: { id: indicadorId },
-    select: { posicaoPreferencial: true },
-  });
-
-  if (indicador?.posicaoPreferencial === "esquerda" || indicador?.posicaoPreferencial === "direita") {
-    return indicador.posicaoPreferencial as "esquerda" | "direita";
-  }
-
-  // Se preferência for 'auto', conta o número de indicados em cada perna e aloca na menor perna (equilíbrio)
-  const [qtdEsquerda, qtdDireita] = await Promise.all([
-    prisma.profile.count({
-      where: { indicadorId, pernaIndicacao: "esquerda" },
-    }),
-    prisma.profile.count({
-      where: { indicadorId, pernaIndicacao: "direita" },
-    }),
-  ]);
-
-  return qtdEsquerda <= qtdDireita ? "esquerda" : "direita";
-}
-
-export async function vincularIndicacao({
-  indicadoId,
+export async function processarIndicacaoNovaEmpresa({
+  indicadoEmpresaId,
   refCode,
-  pernaSolicitada,
 }: {
-  indicadoId: string;
+  indicadoEmpresaId: string;
   refCode?: string | null;
-  pernaSolicitada?: string | null;
 }) {
-  if (!refCode) return null;
+  try {
+    // 1. Garante que a nova empresa possua seu próprio código de indicação
+    await garantirCodigoIndicacaoEmpresa(indicadoEmpresaId);
 
-  const indicador = await prisma.profile.findUnique({
-    where: { codigoIndicacao: refCode.trim().toUpperCase() },
-  });
+    if (!refCode || !refCode.trim()) return null;
 
-  if (!indicador || indicador.id === indicadoId) return null;
+    const codigoTratado = refCode.trim().toUpperCase();
 
-  const pernaFinal = await determinarPernaAlocacao(indicador.id, pernaSolicitada);
+    // 2. Buscar empresa indicadora pelo código
+    const empresaIndicadora = await prisma.empresa.findUnique({
+      where: { codigoIndicacao: codigoTratado },
+    });
 
-  await prisma.profile.update({
-    where: { id: indicadoId },
-    data: {
-      indicadorId: indicador.id,
-      pernaIndicacao: pernaFinal,
-    },
-  });
+    if (!empresaIndicadora || empresaIndicadora.id === indicadoEmpresaId) {
+      return null;
+    }
 
-  await prisma.indicacaoRegistro.create({
-    data: {
-      indicadorId: indicador.id,
-      indicadoId,
-      perna: pernaFinal,
-      pontos: 100, // Pontos/bônus de indicação inicial
-    },
-  }).catch(() => {});
+    // 3. Vincular indicador na empresa indicada
+    await prisma.empresa.update({
+      where: { id: indicadoEmpresaId },
+      data: { indicadoPor: codigoTratado },
+    });
 
-  return { indicadorId: indicador.id, perna: pernaFinal };
+    // 4. Criar ReferralEvent de nível único
+    const referralEvent = await prisma.referralEvent.create({
+      data: {
+        indicadorEmpresaId: empresaIndicadora.id,
+        indicadoEmpresaId,
+        codigoUsado: codigoTratado,
+        status: "loja_criada",
+      },
+    });
+
+    // 5. Conceder pontos de 'novo_cadastro' e 'loja_criada' para a empresa indicadora
+    await concederPontos(
+      empresaIndicadora.id,
+      "novo_cadastro",
+      referralEvent.id,
+      "Bônus por nova indicação direta cadastrada"
+    );
+
+    await concederPontos(
+      empresaIndicadora.id,
+      "loja_criada",
+      referralEvent.id,
+      "Bônus por criação de loja de empresa indicada"
+    );
+
+    return { indicadorEmpresaId: empresaIndicadora.id, referralEventId: referralEvent.id };
+  } catch (err) {
+    console.error("Erro ao processar indicação de nova empresa:", err);
+    return null;
+  }
 }

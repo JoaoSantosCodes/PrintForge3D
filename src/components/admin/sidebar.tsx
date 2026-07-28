@@ -102,7 +102,6 @@ export function Sidebar() {
       title: "GESTÃO & REDE",
       items: [
         { label: "PrintForge Rewards 🎁", href: "/admin/rewards", icon: Gift },
-        { label: "Indicações Binárias", href: "/admin/indicacoes", icon: Network },
         { label: "Meu Plano / Assinatura", href: "/admin/assinatura", icon: CreditCard },
         { label: "Usuários", href: "/admin/usuarios", icon: Users, badge: pendingUsersCount > 0 ? `🔴 ${pendingUsersCount}` : null },
         { label: "Auditoria", href: "/admin/auditoria", icon: FileText },

@@ -4,6 +4,7 @@ import { getCurrentProfile } from "@/lib/auth-server";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { concederPontos } from "@/lib/rewards";
 
 async function verifySuperAdmin() {
   const profile = await getCurrentProfile();
@@ -29,8 +30,36 @@ export async function marcarMensalidadePagaAction(empresaId: string) {
       },
     });
 
+    // Processar pontuação do PrintForge Rewards
+    const referralEvent = await prisma.referralEvent.findFirst({
+      where: { indicadoEmpresaId: empresaId },
+    });
+
+    if (referralEvent) {
+      if (referralEvent.status !== "assinatura_paga") {
+        await prisma.referralEvent.update({
+          where: { id: referralEvent.id },
+          data: { status: "assinatura_paga" },
+        });
+        await concederPontos(
+          referralEvent.indicadorEmpresaId,
+          "primeira_assinatura",
+          referralEvent.id,
+          `Bônus pela primeira assinatura paga da empresa ${empresa.nome}`
+        );
+      } else {
+        await concederPontos(
+          referralEvent.indicadorEmpresaId,
+          "renovacao_mensal",
+          `${referralEvent.id}_renovacao_${proximaCobranca.toISOString().substring(0, 7)}`,
+          `Bônus por renovação mensal da empresa ${empresa.nome}`
+        );
+      }
+    }
+
     revalidatePath("/superadmin");
     revalidatePath("/superadmin/empresas");
+    revalidatePath("/admin/rewards");
     return { success: true, message: `Mensalidade da empresa ${empresa.nome} renovada até ${proximaCobranca.toLocaleDateString('pt-BR')}` };
   } catch (err: any) {
     return { error: err?.message || "Erro ao marcar mensalidade como paga." };
@@ -73,8 +102,22 @@ export async function alterarPlanoEmpresaAction(empresaId: string, planoId: stri
       data: { planoId: plano.id },
     });
 
+    const referralEvent = await prisma.referralEvent.findFirst({
+      where: { indicadoEmpresaId: empresaId },
+    });
+
+    if (referralEvent) {
+      await concederPontos(
+        referralEvent.indicadorEmpresaId,
+        "upgrade_plano",
+        `${empresaId}_upgrade_${planoId}`,
+        `Bônus por upgrade de plano da empresa ${empresa.nome}`
+      );
+    }
+
     revalidatePath("/superadmin");
     revalidatePath("/superadmin/empresas");
+    revalidatePath("/admin/rewards");
     return { success: true, message: `Plano da empresa ${empresa.nome} alterado para ${plano.nome}.` };
   } catch (err: any) {
     return { error: err?.message || "Erro ao alterar plano da empresa." };

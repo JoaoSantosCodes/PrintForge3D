@@ -79,11 +79,39 @@ export async function updatePedidoStatusAction(id: string, novoStatus: string) {
       data: { status: novoStatus },
     });
 
+    if (novoStatus === "entregue" && existing.pago) {
+      await checarPrimeiraVenda(empresaId, id);
+    }
+
     revalidatePath("/admin/pedidos");
     revalidatePath("/admin");
     return { success: true };
   } catch (err: any) {
     return { error: err?.message || "Erro ao atualizar status do pedido." };
+  }
+}
+
+async function checarPrimeiraVenda(empresaId: string, pedidoId: string) {
+  try {
+    const totalEntreguesPagos = await prisma.pedido.count({
+      where: { empresaId, status: "entregue", pago: true },
+    });
+    if (totalEntreguesPagos === 1) {
+      const { concederPontos } = await import("@/lib/rewards");
+      const referralEvent = await prisma.referralEvent.findFirst({
+        where: { indicadoEmpresaId: empresaId },
+      });
+      if (referralEvent) {
+        await concederPontos(
+          referralEvent.indicadorEmpresaId,
+          "primeira_venda",
+          pedidoId,
+          "Bônus pela primeira venda realizada da empresa indicada"
+        );
+      }
+    }
+  } catch (err) {
+    console.warn("Aviso ao checar primeira venda:", err);
   }
 }
 

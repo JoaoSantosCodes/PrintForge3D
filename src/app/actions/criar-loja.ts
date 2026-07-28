@@ -3,7 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
 import { RESERVED_SLUGS } from "@/lib/constants";
-import { vincularIndicacao } from "@/lib/indicacoes";
+import { processarIndicacaoNovaEmpresa } from "@/lib/indicacoes";
 import { z } from "zod";
 
 const criarLojaSchema = z.object({
@@ -127,14 +127,11 @@ export async function criarLojaAction(formData: FormData) {
       },
     });
 
-    // 7. Processar vínculo de indicação se houver refCode
-    if (v.refCode) {
-      await vincularIndicacao({
-        indicadoId: novoPerfil.id,
-        refCode: v.refCode,
-        pernaSolicitada: v.perna,
-      });
-    }
+    // 7. Processar vínculo de indicação se houver refCode ou garantir código de indicação
+    await processarIndicacaoNovaEmpresa({
+      indicadoEmpresaId: novaEmpresa.id,
+      refCode: v.refCode,
+    });
 
     // 8. Criar Configuração da Empresa
     await prisma.configuracao.create({

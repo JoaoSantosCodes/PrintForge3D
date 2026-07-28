@@ -34,58 +34,43 @@ model Empresa {
   status          String      @default("trial") // trial | ativo | inadimplente | cancelado | bloqueado | trial_expirado
   trialExpiraEm   DateTime?
   proximaCobranca DateTime?
+  
+  // Código de Indicação Único da Empresa (ex: PRINT-123456)
+  codigoIndicacao String?     @unique
+  indicadoPor     String?     // Código de quem indicou esta empresa
+
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
 
-  profiles        Profile[]
-  printers        Printer[]
-  filaments       Filament[]
-  tintas          Tinta[]
-  pecas           Peca[]
-  pedidos         Pedido[]
-  cupons          Cupom[]
-  configuracao    Configuracao?
+  profiles               Profile[]
+  printers               Printer[]
+  filaments              Filament[]
+  tintas                 Tinta[]
+  pecas                  Peca[]
+  pedidos                Pedido[]
+  cupons                 Cupom[]
+  configuracao           Configuracao?
   filamentPriceHistories FilamentPriceHistory[]
+
+  rewardTransactions     RewardTransaction[]
+  rewardRedemptions      RewardRedemption[]
+  achievements           AchievementUnlocked[]
+  missionProgresses      MissionProgress[]
 }
 
 model Profile {
-  id                  String   @id // Supabase auth.users id
-  email               String   @unique
+  id                  String    @id // Supabase auth.users id
+  email               String    @unique
   nome                String?
-  role                String   @default("admin") // super_admin | admin | funcionario | cliente
-  status              String   @default("aprovado") // pendente | aprovado | bloqueado
+  role                String    @default("admin") // super_admin | admin | funcionario | cliente
+  status              String    @default("aprovado") // pendente | aprovado | bloqueado
   aprovadoEm          DateTime?
   empresaId           String?
-  empresa             Empresa? @relation(fields: [empresaId], references: [id], onDelete: SetNull)
-  
-  // Sistema de Indicação & Rede Binária
-  codigoIndicacao     String?  @unique
-  indicadorId         String?
-  indicador           Profile? @relation("ArvoreIndicacao", fields: [indicadorId], references: [id], onDelete: SetNull)
-  indicados           Profile[] @relation("ArvoreIndicacao")
-  pernaIndicacao      String?  @default("esquerda") // esquerda | direita
-  posicaoPreferencial String?  @default("auto")     // auto | esquerda | direita
+  empresa             Empresa?  @relation(fields: [empresaId], references: [id], onDelete: SetNull)
 
-  createdAt           DateTime @default(now())
+  createdAt           DateTime  @default(now())
 
   pedidos             Pedido[]
-  registrosIndicado   IndicacaoRegistro[] @relation("RegistroIndicado")
-  registrosIndicador  IndicacaoRegistro[] @relation("RegistroIndicador")
-  rewardTransactions  RewardTransaction[]
-  rewardRedemptions   RewardRedemption[]
-  achievements        AchievementUser[]
-  missionProgresses   MissionProgress[]
-}
-
-model IndicacaoRegistro {
-  id           String   @id @default(cuid())
-  indicadorId  String
-  indicador    Profile  @relation("RegistroIndicador", fields: [indicadorId], references: [id], onDelete: Cascade)
-  indicadoId   String
-  indicado     Profile  @relation("RegistroIndicado", fields: [indicadoId], references: [id], onDelete: Cascade)
-  perna        String   // esquerda | direita
-  pontos       Int      @default(120)
-  createdAt    DateTime @default(now())
 }
 
 model Printer {
@@ -234,101 +219,120 @@ model Cupom {
 }
 
 // -------------------------------------------------------------
-// PRINTFORGE REWARDS — PROGRAMA DE RECOMPENSAS GAMIFICADO
+// PRINTFORGE REWARDS — PROGRAMA DE FIDELIDADE E INDICAÇÕES DE NÍVEL ÚNICO
 // -------------------------------------------------------------
 
 model RewardLevel {
   id            String   @id @default(cuid())
   nome          String   // Bronze, Prata, Ouro, Diamante, Platinum, Elite
-  slug          String   @unique
   pontosMinimos Int
-  icone         String   // Nome do ícone Lucide ou emoji
-  cor           String   // HSL ou Hex de destaque
-  beneficio     String
-  badge         String
+  icone         String?
+  cor           String?
+  beneficios    String?
+  ordem         Int      @default(1)
 }
 
-model RewardCatalog {
-  id               String             @id @default(cuid())
-  nome             String             // ex: "Filamento PLA Branco 1kg"
-  descricao        String
-  imagemUrl        String?
-  categoria        String             // filamentos | resinas | pecas | acessorios | cupons | creditos | brindes | premium
-  tipo             String             // fisico | digital
-  pontosNecessarios Int
-  estoque          Int                @default(100)
-  ativo            Boolean            @default(true)
-  createdAt        DateTime           @default(now())
-
-  resgates         RewardRedemption[]
-}
-
-model RewardRedemption {
-  id           String        @id @default(cuid())
-  profileId    String
-  profile      Profile       @relation(fields: [profileId], references: [id], onDelete: Cascade)
-  rewardId     String
-  reward       RewardCatalog @relation(fields: [rewardId], references: [id], onDelete: Cascade)
-  pontosGastos Int
-  status       String        @default("pendente") // pendente | aprovado | enviado | concluido | cancelado
-  codigoCupom  String?
-  createdAt    DateTime      @default(now())
+model RewardPointsConfig {
+  id        String   @id @default(cuid())
+  evento    String   @unique // "novo_cadastro", "loja_criada", "primeira_assinatura", "renovacao_mensal", "upgrade_plano", "primeira_venda", "primeiro_produto", "perfil_completo"
+  pontos    Int
+  ativo     Boolean  @default(true)
+  descricao String?
 }
 
 model RewardTransaction {
-  id        String   @id @default(cuid())
-  profileId String
-  profile   Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
-  pontos    Int      // positivo para crédito, negativo para débito
-  tipo      String   // credito | debito
-  evento    String   // cadastro | loja_criada | primeira_assinatura | renovacao | upgrade | primeira_venda | resgate
-  descricao String
-  createdAt DateTime @default(now())
+  id           String   @id @default(cuid())
+  empresaId    String
+  empresa      Empresa  @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  tipo         String   // "credito" | "debito"
+  evento       String   // referencia ao RewardPointsConfig.evento, ou "resgate" para débitos
+  pontos       Int
+  descricao    String?
+  referenciaId String?  // ex: id do resgate, id do evento de indicação
+  createdAt    DateTime @default(now())
+}
+
+model ReferralEvent {
+  id                 String   @id @default(cuid())
+  indicadorEmpresaId String   // empresa que indicou
+  indicadoEmpresaId  String?  // empresa criada a partir da indicação, se já existir
+  codigoUsado        String
+  status             String   @default("cadastro_iniciado") // cadastro_iniciado | loja_criada | trial | assinatura_paga | cancelado
+  createdAt          DateTime @default(now())
+  atualizadoEm       DateTime @updatedAt
+}
+
+model RewardCatalogItem {
+  id                String             @id @default(cuid())
+  nome              String
+  descricao         String?
+  imagemUrl         String?
+  categoria         String             // filamentos | resinas | pecas | acessorios | cupons | creditos | brindes | premium
+  pontosNecessarios Int
+  estoque           Int?               // null = ilimitado
+  ativo             Boolean            @default(true)
+  createdAt         DateTime           @default(now())
+
+  resgates          RewardRedemption[]
+}
+
+model RewardRedemption {
+  id           String            @id @default(cuid())
+  empresaId    String
+  empresa      Empresa           @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  itemId       String
+  item         RewardCatalogItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  pontosGastos Int
+  status       String            @default("solicitado") // solicitado | em_processamento | enviado | entregue | cancelado
+  createdAt    DateTime          @default(now())
 }
 
 model Achievement {
-  id               String            @id @default(cuid())
-  nome             String
-  descricao        String
-  icone            String
-  raridade         String            // comum | rara | epica | lendaria
-  pontosRecompensa Int               @default(100)
+  id            String                @id @default(cuid())
+  nome          String
+  descricao     String
+  icone         String?
+  raridade      String                // comum | raro | epico | lendario
+  criterioTipo  String                // ex: "indicacoes_total", "pontos_total", "resgates_total"
+  criterioValor Int
 
-  usuarios         AchievementUser[]
+  unlockedBy    AchievementUnlocked[]
 }
 
-model AchievementUser {
+model AchievementUnlocked {
   id            String      @id @default(cuid())
-  profileId     String
-  profile       Profile     @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  empresaId     String
+  empresa       Empresa     @relation(fields: [empresaId], references: [id], onDelete: Cascade)
   achievementId String
   achievement   Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
-  conquistadoEm DateTime    @default(now())
+  desbloqueadoEm DateTime   @default(now())
 
-  @@unique([profileId, achievementId])
+  @@unique([empresaId, achievementId])
 }
 
 model Mission {
   id               String            @id @default(cuid())
-  titulo           String
+  nome             String
   descricao        String
-  categoria        String            // diaria | semanal | mensal
-  pontosRecompensa Int
-  meta             Int               @default(1)
+  tipo             String            // diaria | semanal | mensal
+  criterioTipo     String
+  criterioValor    Int
+  recompensaPontos Int
   ativo            Boolean           @default(true)
 
   progresses       MissionProgress[]
 }
 
 model MissionProgress {
-  id            String   @id @default(cuid())
-  profileId     String
-  profile       Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
-  missionId     String
-  mission       Mission  @relation(fields: [missionId], references: [id], onDelete: Cascade)
-  progressoAtual Int      @default(0)
-  concluida     Boolean  @default(false)
-  concluidaEm   DateTime?
+  id                String    @id @default(cuid())
+  empresaId         String
+  empresa           Empresa   @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  missionId         String
+  mission           Mission   @relation(fields: [missionId], references: [id], onDelete: Cascade)
+  progresso         Int       @default(0)
+  concluida         Boolean   @default(false)
+  periodoReferencia String    // ex: "2026-07" ou "2026-W30"
+  concluidaEm       DateTime?
 
-  @@unique([profileId, missionId])
+  @@unique([empresaId, missionId, periodoReferencia])
 }
