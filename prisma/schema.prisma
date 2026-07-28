@@ -56,6 +56,10 @@ model Empresa {
   rewardRedemptions      RewardRedemption[]
   achievements           AchievementUnlocked[]
   missionProgresses      MissionProgress[]
+
+  @@index([status])
+  @@index([planoId])
+  @@index([indicadoPor])
 }
 
 model Profile {
@@ -71,6 +75,10 @@ model Profile {
   createdAt           DateTime  @default(now())
 
   pedidos             Pedido[]
+
+  @@index([empresaId])
+  @@index([role])
+  @@index([status])
 }
 
 model Printer {
@@ -85,6 +93,8 @@ model Printer {
   horasTrabalhadas   Float    @default(0)
   custoManutencaoAno Float    @default(0)
   createdAt          DateTime @default(now())
+
+  @@index([empresaId])
 }
 
 model Filament {
@@ -99,6 +109,8 @@ model Filament {
   pesoRestanteGramas Float                  @default(1000.0) // Peso restante em gramas
   createdAt          DateTime               @default(now())
   priceHistory       FilamentPriceHistory[]
+
+  @@index([empresaId])
 }
 
 model FilamentPriceHistory {
@@ -109,6 +121,9 @@ model FilamentPriceHistory {
   filament   Filament @relation(fields: [filamentId], references: [id], onDelete: Cascade)
   precoPorKg Float
   data       DateTime @default(now())
+
+  @@index([empresaId])
+  @@index([filamentId])
 }
 
 model Tinta {
@@ -122,6 +137,8 @@ model Tinta {
   volumeMl  Float    @default(0) // Volume da embalagem em ml
   preco     Float    // Preço de compra em R$
   createdAt DateTime @default(now())
+
+  @@index([empresaId])
 }
 
 model Peca {
@@ -140,6 +157,10 @@ model Peca {
   custoPintura   CustoPintura?
   custoEmbalagem CustoEmbalagem?
   pedidos        Pedido[]
+
+  @@index([empresaId])
+  @@index([status])
+  @@index([publicada])
 }
 
 model Pedido {
@@ -158,6 +179,11 @@ model Pedido {
   usuarioId      String?
   usuario        Profile?   @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
   createdAt      DateTime   @default(now())
+
+  @@index([empresaId])
+  @@index([empresaId, status])
+  @@index([pecaId])
+  @@index([usuarioId])
 }
 
 model CustoImpressao {
@@ -250,6 +276,10 @@ model RewardTransaction {
   descricao    String?
   referenciaId String?  // ex: id do resgate, id do evento de indicação
   createdAt    DateTime @default(now())
+
+  @@index([empresaId])
+  @@index([empresaId, tipo])
+  @@index([referenciaId])
 }
 
 model ReferralEvent {
@@ -260,6 +290,10 @@ model ReferralEvent {
   status             String   @default("cadastro_iniciado") // cadastro_iniciado | loja_criada | trial | assinatura_paga | cancelado
   createdAt          DateTime @default(now())
   atualizadoEm       DateTime @updatedAt
+
+  @@index([indicadorEmpresaId])
+  @@index([indicadoEmpresaId])
+  @@index([status])
 }
 
 model RewardCatalogItem {
@@ -274,6 +308,9 @@ model RewardCatalogItem {
   createdAt         DateTime           @default(now())
 
   resgates          RewardRedemption[]
+
+  @@index([categoria])
+  @@index([ativo])
 }
 
 model RewardRedemption {
@@ -285,6 +322,10 @@ model RewardRedemption {
   pontosGastos Int
   status       String            @default("solicitado") // solicitado | em_processamento | enviado | entregue | cancelado
   createdAt    DateTime          @default(now())
+
+  @@index([empresaId])
+  @@index([itemId])
+  @@index([status])
 }
 
 model Achievement {
@@ -308,6 +349,7 @@ model AchievementUnlocked {
   desbloqueadoEm DateTime   @default(now())
 
   @@unique([empresaId, achievementId])
+  @@index([empresaId])
 }
 
 model Mission {
@@ -335,4 +377,5 @@ model MissionProgress {
   concluidaEm       DateTime?
 
   @@unique([empresaId, missionId, periodoReferencia])
+  @@index([empresaId])
 }

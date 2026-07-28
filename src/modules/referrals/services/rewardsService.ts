@@ -11,49 +11,45 @@ export async function getVendedorRewardsData(empresaId: string) {
     const nivelInfo = await obterNivelEProgresso(empresaId);
     const saldoPontos = nivelInfo.saldoAtual;
 
-    // KPIs
-    const totalIndicacoes = await prisma.referralEvent.count({
-      where: { indicadorEmpresaId: empresaId },
-    });
+    // KPIs e Dados iniciais em paralelo
+    const [totalIndicacoes, assinaturasConvertidas, resgatesRealizados, transacoesRecentes] = await Promise.all([
+      prisma.referralEvent.count({ where: { indicadorEmpresaId: empresaId } }),
+      prisma.referralEvent.count({ where: { indicadorEmpresaId: empresaId, status: "assinatura_paga" } }),
+      prisma.rewardRedemption.count({ where: { empresaId } }),
+      prisma.rewardTransaction.findMany({
+        where: { empresaId },
+        orderBy: { createdAt: "desc" },
+        take: 20,
+      }),
+    ]);
 
-    const assinaturasConvertidas = await prisma.referralEvent.count({
-      where: { indicadorEmpresaId: empresaId, status: "assinatura_paga" },
-    });
-
-    const resgatesRealizados = await prisma.rewardRedemption.count({
-      where: { empresaId },
-    });
-
-    // Timeline de transações recentes (créditos e débitos)
-    const transacoesRecentes = await prisma.rewardTransaction.findMany({
-      where: { empresaId },
-      orderBy: { createdAt: "desc" },
-      take: 20,
-    });
-
-    // Histórico para gráfico dos últimos 6 meses
+    // Histórico para gráfico dos últimos 6 meses (em paralelo)
     const hoje = new Date();
-    const mesesGrafico = [];
+    const mesesPromises = [];
 
     for (let i = 5; i >= 0; i--) {
       const dataMes = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1);
       const proximoMes = new Date(hoje.getFullYear(), hoje.getMonth() - i + 1, 1);
-
-      const creditosMes = await prisma.rewardTransaction.aggregate({
-        where: {
-          empresaId,
-          tipo: "credito",
-          createdAt: { gte: dataMes, lt: proximoMes },
-        },
-        _sum: { pontos: true },
-      });
-
       const nomeMes = dataMes.toLocaleDateString("pt-BR", { month: "short" }).toUpperCase();
-      mesesGrafico.push({
-        mes: nomeMes,
-        pontos: creditosMes._sum.pontos || 0,
-      });
+
+      mesesPromises.push(
+        prisma.rewardTransaction
+          .aggregate({
+            where: {
+              empresaId,
+              tipo: "credito",
+              createdAt: { gte: dataMes, lt: proximoMes },
+            },
+            _sum: { pontos: true },
+          })
+          .then((res) => ({
+            mes: nomeMes,
+            pontos: res._sum.pontos || 0,
+          }))
+      );
     }
+
+    const mesesGrafico = await Promise.all(mesesPromises);
 
     // Catálogo de Recompensas Ativo
     const catalogo = await prisma.rewardCatalogItem.findMany({

@@ -23,8 +23,10 @@ export default async function PecaDetailPage({
     notFound();
   }
 
-  const printers = await prisma.printer.findMany();
-  const filaments = await prisma.filament.findMany();
+  const [printers, filaments] = await Promise.all([
+    prisma.printer.findMany({ where: { empresaId: peca.empresaId } }),
+    prisma.filament.findMany({ where: { empresaId: peca.empresaId } }),
+  ]);
 
   return <PecaDetailClientPage peca={peca} printers={printers} filaments={filaments} />;
 }

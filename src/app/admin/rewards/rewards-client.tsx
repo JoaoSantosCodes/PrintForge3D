@@ -34,16 +34,13 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  CartesianGrid,
-} from "recharts";
+import dynamic from "next/dynamic";
 import { resgatarItemAction } from "@/app/actions/rewards";
+
+const RewardsBarChart = dynamic(() => import("./rewards-chart"), {
+  ssr: false,
+  loading: () => <div className="h-full w-full flex items-center justify-center text-xs text-slate-500">Carregando gráfico...</div>,
+});
 
 interface RewardsClientProps {
   data: {
@@ -395,18 +392,7 @@ export default function VendedorRewardsClient({ data }: RewardsClientProps) {
         </div>
 
         <div className="h-56 w-full pt-2">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={data.graficoPontos} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#334155" strokeOpacity={0.2} />
-              <XAxis dataKey="mes" tick={{ fill: "#94a3b8", fontSize: 12 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill: "#94a3b8", fontSize: 12 }} axisLine={false} tickLine={false} />
-              <Tooltip
-                contentStyle={{ backgroundColor: "#0f172a", borderColor: "#334155", borderRadius: "12px", color: "#f8fafc", fontSize: "12px" }}
-                formatter={(val: any) => [`${val || 0} pts`, "Pontos Ganhos"]}
-              />
-              <Bar dataKey="pontos" fill="#14b8a6" radius={[8, 8, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+          <RewardsBarChart data={data.graficoPontos} />
         </div>
       </div>
 

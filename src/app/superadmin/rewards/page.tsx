@@ -1,5 +1,3 @@
-"use server";
-
 import { getCurrentProfile } from "@/lib/auth-server";
 import { getSuperAdminRewardsData } from "@/modules/referrals/services/rewardsService";
 import { redirect } from "next/navigation";

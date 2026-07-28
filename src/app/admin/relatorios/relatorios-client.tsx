@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { formatarMoeda } from "@/lib/custos";
-import { gerarPDFRelatorioMensal } from "@/lib/pdf-relatorio";
 import { Button } from "@/components/ui/button";
 import {
   FileText,
@@ -43,9 +42,31 @@ export default function RelatoriosClientPage({
   printers,
   filaments,
 }: RelatoriosClientPageProps) {
-  const now = new Date();
-  const [selectedMes, setSelectedMes] = useState<number>(now.getMonth());
-  const [selectedAno, setSelectedAno] = useState<number>(now.getFullYear());
+  const hoje = new Date();
+  const [selectedMes, setSelectedMes] = useState<number>(hoje.getMonth());
+  const [selectedAno, setSelectedAno] = useState<number>(hoje.getFullYear());
+  const [isExportingPDF, setIsExportingPDF] = useState(false);
+
+  const handleExportPDF = async () => {
+    setIsExportingPDF(true);
+    try {
+      const { gerarPDFRelatorioMensal } = await import("@/lib/pdf-relatorio");
+      const mesAnoExtenso = `${MESES[selectedMes]} de ${selectedAno}`;
+      gerarPDFRelatorioMensal({
+        mesAno: mesAnoExtenso,
+        totalPecasProduzidas,
+        custoTotalProducao,
+        receitaTotal,
+        lucroEstimado,
+        pecaMaisProduzida,
+        pedidosConcluidos: pedidosConcluidos.length,
+      });
+    } catch (err) {
+      console.error("Erro ao gerar PDF:", err);
+    } finally {
+      setIsExportingPDF(false);
+    }
+  };
 
   const printerMap = new Map(printers.map((p) => [p.id, p]));
   const filamentMap = new Map(filaments.map((f) => [f.id, f]));
@@ -113,18 +134,6 @@ export default function RelatoriosClientPage({
 
   const lucroEstimado = receitaTotal - custoTotalProducao;
   const mesAnoExtenso = `${MESES[selectedMes]} de ${selectedAno}`;
-
-  const handleExportPDF = () => {
-    gerarPDFRelatorioMensal({
-      mesAno: mesAnoExtenso,
-      totalPecasProduzidas,
-      custoTotalProducao,
-      receitaTotal,
-      lucroEstimado,
-      pecaMaisProduzida,
-      pedidosConcluidos: pedidosConcluidos.length,
-    });
-  };
 
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
