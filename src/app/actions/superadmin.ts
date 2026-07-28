@@ -219,20 +219,39 @@ export async function criarUsuarioSuperAdminAction(formData: FormData) {
           auth: { autoRefreshToken: false, persistSession: false },
         });
 
-        const { data: created, error: createError } = await supabaseAdmin.auth.admin.createUser({
-          email,
-          password,
-          email_confirm: true,
-          user_metadata: { nome: nome || email.split("@")[0] },
-        });
+        // Verificar se usuário já existe no Supabase Auth
+        const { data: usersData } = await supabaseAdmin.auth.admin.listUsers();
+        const existingAuthUser = usersData?.users?.find(
+          (u) => u.email?.toLowerCase() === email
+        );
 
-        if (created?.user) {
-          authUserId = created.user.id;
-        } else if (createError) {
-          console.warn("Aviso ao criar no Supabase Auth:", createError.message);
+        if (existingAuthUser) {
+          authUserId = existingAuthUser.id;
+          const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(existingAuthUser.id, {
+            password,
+            email_confirm: true,
+            user_metadata: { nome: nome || email.split("@")[0] },
+          });
+
+          if (updateError) {
+            return { error: `Erro ao atualizar a senha no Supabase Auth: ${updateError.message}` };
+          }
+        } else {
+          const { data: created, error: createError } = await supabaseAdmin.auth.admin.createUser({
+            email,
+            password,
+            email_confirm: true,
+            user_metadata: { nome: nome || email.split("@")[0] },
+          });
+
+          if (created?.user) {
+            authUserId = created.user.id;
+          } else if (createError) {
+            return { error: `Erro ao criar usuário no Supabase Auth: ${createError.message}` };
+          }
         }
-      } catch (authErr) {
-        console.warn("Erro ao comunicar com Supabase Auth Admin:", authErr);
+      } catch (authErr: any) {
+        return { error: `Erro ao integrar com Supabase Auth: ${authErr?.message || authErr}` };
       }
     }
 

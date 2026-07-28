@@ -176,6 +176,55 @@ export async function loginAction(formData: FormData) {
       }
     }
 
+    // Auto-sincronizar usuários criados/aprovados que não estejam no Supabase Auth
+    if (!authUser) {
+      let dbProfile: any = null;
+      try {
+        dbProfile = await prisma.profile.findFirst({ where: { email } });
+      } catch {}
+
+      if (dbProfile && dbProfile.status === "aprovado") {
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+        const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+        if (supabaseUrl && serviceRoleKey && !supabaseUrl.includes("placeholder")) {
+          try {
+            const { createClient: createAdminClient } = await import("@supabase/supabase-js");
+            const supabaseAdmin = createAdminClient(supabaseUrl, serviceRoleKey, {
+              auth: { autoRefreshToken: false, persistSession: false },
+            });
+
+            const { data: usersData } = await supabaseAdmin.auth.admin.listUsers();
+            const existingAuthUser = usersData?.users?.find(
+              (u) => u.email?.toLowerCase() === email
+            );
+
+            if (existingAuthUser) {
+              await supabaseAdmin.auth.admin.updateUserById(existingAuthUser.id, {
+                password,
+                email_confirm: true,
+              });
+              const retry = await supabase.auth.signInWithPassword({ email, password });
+              authUser = retry.data?.user || (existingAuthUser as any);
+            } else {
+              const created = await supabaseAdmin.auth.admin.createUser({
+                email,
+                password,
+                email_confirm: true,
+                user_metadata: { nome: dbProfile.nome || email.split("@")[0] },
+              });
+              if (created.data?.user) {
+                const retry = await supabase.auth.signInWithPassword({ email, password });
+                authUser = retry.data?.user || (created.data.user as any);
+              }
+            }
+          } catch (syncErr) {
+            console.warn("Aviso ao sincronizar usuário aprovado no Supabase Auth:", syncErr);
+          }
+        }
+      }
+    }
+
     if (!authUser) {
       recordFailedAttempt();
       const msg = authError?.message || "";
@@ -195,6 +244,18 @@ export async function loginAction(formData: FormData) {
     } catch (err) {
       console.warn("Aviso: Banco de dados indisponível no momento:", err);
       dbError = true;
+    }
+
+    if (profile && authUser && profile.id !== authUser.id) {
+      try {
+        await prisma.profile.update({
+          where: { email },
+          data: { id: authUser.id },
+        });
+        profile.id = authUser.id;
+      } catch (alignErr) {
+        console.warn("Aviso ao alinhar id do perfil com Supabase Auth:", alignErr);
+      }
     }
 
     if (isSystemAdmin || isSystemSuperAdmin) {
