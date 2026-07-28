@@ -74,6 +74,7 @@ describe("PrintForge Platform 1.0 — Ecosystem & SDK Architecture", () => {
       expect(res.tempoEstimadoHoras).toBeGreaterThan(3);
       expect(res.precoSugeridoBRL).toBeGreaterThan(15);
       expect(res.insightsIA.length).toBeGreaterThan(0);
+      expect(res.disclaimerEstimativaIA).toContain("fatiador");
     });
   });
 

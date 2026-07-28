@@ -22,6 +22,7 @@ export interface STLIntelligenceAnalysis {
   margemLucroEstimadaPercent: number;
   consumoEnergiaKwh: number;
   insightsIA: string[];
+  disclaimerEstimativaIA: string;
 }
 
 export async function analisarGeometriaSTL(
@@ -104,5 +105,6 @@ export async function analisarGeometriaSTL(
     margemLucroEstimadaPercent: margemLucro,
     consumoEnergiaKwh,
     insightsIA,
+    disclaimerEstimativaIA: "Valores preditivos baseados na geometria tridimensional pura do modelo. O tempo final e consumo real podem variar conforme o fatiador (slicer), perfil de impressão, temperatura e calibração da máquina.",
   };
 }
