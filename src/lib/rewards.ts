@@ -158,7 +158,11 @@ export async function garantirCodigoIndicacaoEmpresa(empresaId: string): Promise
       select: { codigoIndicacao: true },
     });
 
-    if (empresa?.codigoIndicacao) {
+    if (!empresa) {
+      return `PRINT-${empresaId.substring(0, 6).toUpperCase()}`;
+    }
+
+    if (empresa.codigoIndicacao) {
       return empresa.codigoIndicacao;
     }
 

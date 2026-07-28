@@ -139,7 +139,28 @@ export async function getVendedorRewardsData(empresaId: string) {
     };
   } catch (err) {
     console.error("Erro ao carregar dados do vendedor no Rewards:", err);
-    throw err;
+    return {
+      codigoIndicacao: `PRINT-${empresaId.substring(0, 6).toUpperCase()}`,
+      nivelInfo: {
+        nivelAtual: { id: "1", nome: "Bronze", pontosMinimos: 0, ordem: 1, icone: null, cor: null },
+        proximoNivel: { id: "2", nome: "Prata", pontosMinimos: 500, ordem: 2, icone: null, cor: null },
+        saldoAtual: 0,
+        pontosParaProximo: 500,
+        progressoPercentual: 0,
+      },
+      kpis: {
+        saldoPontos: 0,
+        totalIndicacoes: 0,
+        assinaturasConvertidas: 0,
+        resgatesRealizados: 0,
+      },
+      graficoPontos: [],
+      timeline: [],
+      catalogo: [],
+      resgates: [],
+      conquistas: [],
+      missoes: [],
+    };
   }
 }
 
@@ -199,6 +220,12 @@ export async function getSuperAdminRewardsData() {
     };
   } catch (err) {
     console.error("Erro ao carregar dados do SuperAdmin no Rewards:", err);
-    throw err;
+    return {
+      catalogo: [],
+      configs: [],
+      resgates: [],
+      funil: [],
+      totalReferrals: 0,
+    };
   }
 }
