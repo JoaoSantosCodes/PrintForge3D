@@ -30,8 +30,9 @@ export async function createFilamentAction(formData: FormData) {
     await prisma.filament.create({
       data: {
         empresaId,
-        marca: validated.marca,
-        tipo: validated.tipo,
+        nome: `${validated.tipo} ${validated.cor}`,
+        marca: validated.marca || "Genérico",
+        material: validated.tipo,
         cor: validated.cor,
         precoPorKg: validated.precoPorKg,
         pesoRestanteGramas: validated.pesoRestanteGramas,
@@ -84,8 +85,9 @@ export async function updateFilamentAction(id: string, formData: FormData) {
     await prisma.filament.update({
       where: { id },
       data: {
-        marca: validated.marca,
-        tipo: validated.tipo,
+        nome: `${validated.tipo} ${validated.cor}`,
+        marca: validated.marca || "Genérico",
+        material: validated.tipo,
         cor: validated.cor,
         precoPorKg: validated.precoPorKg,
         pesoRestanteGramas: validated.pesoRestanteGramas,
@@ -93,6 +95,7 @@ export async function updateFilamentAction(id: string, formData: FormData) {
     });
 
     revalidatePath("/admin/filamentos");
+    revalidatePath("/admin/pecas/nova");
     return { success: true };
   } catch (err: any) {
     if (err instanceof z.ZodError) {
@@ -117,6 +120,7 @@ export async function deleteFilamentAction(id: string) {
     await prisma.filament.delete({
       where: { id },
     });
+
     revalidatePath("/admin/filamentos");
     return { success: true };
   } catch (err: any) {
@@ -127,15 +131,14 @@ export async function deleteFilamentAction(id: string) {
 export async function getLowStockCountAction() {
   try {
     const empresaId = await getEmpresaIdAtual();
-    const filaments = await prisma.filament.findMany({
-      where: { empresaId },
-      select: { pesoRestanteGramas: true },
+    const count = await prisma.filament.count({
+      where: {
+        empresaId,
+        pesoRestanteGramas: { lte: 200 },
+      },
     });
-    const lowStockCount = filaments.filter(
-      (f) => (f.pesoRestanteGramas ?? 1000) < 150
-    ).length;
-    return { lowStockCount };
-  } catch (err) {
+    return { lowStockCount: count };
+  } catch {
     return { lowStockCount: 0 };
   }
 }

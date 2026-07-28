@@ -2,7 +2,7 @@
 
 import { getCurrentProfile } from "@/lib/auth-server";
 import { prisma } from "@/lib/prisma";
-import { garantirCodigoIndicacao } from "@/lib/indicacoes";
+import { getAffiliateCenterData } from "@/modules/referrals/services/affiliateService";
 import { revalidatePath } from "next/cache";
 
 export async function getPerfilIndicacoesAction() {
@@ -12,51 +12,12 @@ export async function getPerfilIndicacoesAction() {
       return { error: "Usuário não autenticado." };
     }
 
-    const codigoIndicacao = await garantirCodigoIndicacao(profile.id);
-
-    const [indicadosEsquerda, indicadosDireita, registros] = await Promise.all([
-      prisma.profile.findMany({
-        where: { indicadorId: profile.id, pernaIndicacao: "esquerda" },
-        select: {
-          id: true,
-          nome: true,
-          email: true,
-          status: true,
-          role: true,
-          createdAt: true,
-          empresa: { select: { nome: true, slug: true } },
-        },
-        orderBy: { createdAt: "desc" },
-      }),
-      prisma.profile.findMany({
-        where: { indicadorId: profile.id, pernaIndicacao: "direita" },
-        select: {
-          id: true,
-          nome: true,
-          email: true,
-          status: true,
-          role: true,
-          createdAt: true,
-          empresa: { select: { nome: true, slug: true } },
-        },
-        orderBy: { createdAt: "desc" },
-      }),
-      prisma.indicacaoRegistro.aggregate({
-        where: { indicadorId: profile.id },
-        _sum: { pontos: true },
-      }),
-    ]);
-
-    const totalPontos = registros._sum.pontos || 0;
+    const affiliateData = await getAffiliateCenterData(profile.id);
 
     return {
       success: true,
       profileId: profile.id,
-      codigoIndicacao,
-      posicaoPreferencial: profile.posicaoPreferencial || "auto",
-      indicadosEsquerda,
-      indicadosDireita,
-      totalPontos,
+      affiliateData,
     };
   } catch (err: any) {
     return { error: err?.message || "Erro ao carregar dados de indicação." };

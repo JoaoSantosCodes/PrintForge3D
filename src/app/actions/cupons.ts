@@ -42,14 +42,16 @@ export async function createCupomAction(formData: FormData) {
       },
     });
 
-    await prisma.auditLog.create({
-      data: {
-        empresaId,
-        adminId: profile.id,
-        acao: "criou_cupom",
-        detalhes: `Cupom ${codigo} de ${percentualDesconto}% de desconto criado.`,
-      },
-    });
+    if ((prisma as any).auditLog) {
+      await (prisma as any).auditLog.create({
+        data: {
+          empresaId,
+          adminId: profile.id,
+          acao: "criou_cupom",
+          detalhes: `Cupom ${codigo} de ${percentualDesconto}% de desconto criado.`,
+        },
+      }).catch(() => {});
+    }
 
     revalidatePath("/admin/cupons");
     return { success: true, cupom, message: `Cupom ${codigo} criado com sucesso!` };

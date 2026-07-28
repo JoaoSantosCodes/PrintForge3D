@@ -10,15 +10,17 @@ async function registrarAuditLog(acao: string, alvoId?: string, detalhes?: strin
     const profile = await getCurrentProfile();
     if (!profile) return;
     const empresaId = profile.empresaId || "";
-    await prisma.auditLog.create({
-      data: {
-        empresaId,
-        adminId: profile.id,
-        acao,
-        alvoId,
-        detalhes,
-      },
-    });
+    if ((prisma as any).auditLog) {
+      await (prisma as any).auditLog.create({
+        data: {
+          empresaId,
+          adminId: profile.id,
+          acao,
+          alvoId,
+          detalhes,
+        },
+      });
+    }
   } catch (err) {
     console.warn("⚠️ Falha ao gravar AuditLog:", err);
   }

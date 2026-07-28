@@ -18,7 +18,7 @@ export default async function EditarPecaPage({ params }: { params: { id: string 
       },
     }),
     prisma.printer.findMany({ where: { empresaId }, orderBy: { nome: "asc" } }).catch(() => []),
-    prisma.filament.findMany({ where: { empresaId }, orderBy: { tipo: "asc" } }).catch(() => []),
+    prisma.filament.findMany({ where: { empresaId }, orderBy: { nome: "asc" } }).catch(() => []),
   ]);
 
   if (!peca) {

@@ -48,6 +48,7 @@ export async function getCurrentProfile() {
             status: "aprovado",
             empresaId: null,
             empresa: null,
+            createdAt: new Date(),
           } as any;
         } else {
           profile.role = "super_admin";
@@ -76,6 +77,7 @@ export async function getCurrentProfile() {
                 limitePedidosMes: 100,
               },
             },
+            createdAt: new Date(),
           } as any;
         } else {
           profile.role = "admin";

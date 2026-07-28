@@ -12,7 +12,7 @@ export default async function NovaPecaPage() {
     const empresaId = await getEmpresaIdAtual();
     const res = await Promise.all([
       prisma.printer.findMany({ where: { empresaId }, orderBy: { nome: "asc" } }),
-      prisma.filament.findMany({ where: { empresaId }, orderBy: { tipo: "asc" } }),
+      prisma.filament.findMany({ where: { empresaId }, orderBy: { nome: "asc" } }),
     ]);
     printers = res[0];
     filaments = res[1];

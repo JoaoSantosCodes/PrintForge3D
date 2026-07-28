@@ -1,46 +1,26 @@
 import { prisma } from "@/lib/prisma";
-import { getCurrentProfile } from "@/lib/auth-server";
 import { notFound } from "next/navigation";
 import { CatalogoDetalheClient } from "./catalogo-detalhe-client";
+import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
-export async function generateMetadata({ params }: { params: { id: string } }) {
-  const peca = await prisma.peca.findFirst({
-    where: { id: params.id, publicada: true },
-    select: { nome: true, descricao: true, fotoUrl: true },
-  });
-
-  if (!peca) {
-    return { title: "Peça Não Encontrada — PrintForge 3D" };
-  }
-
-  return {
-    title: `${peca.nome} — PrintForge 3D`,
-    description: peca.descricao || `Confira os detalhes de ${peca.nome} no catálogo 3D.`,
-    openGraph: {
-      title: `${peca.nome} — PrintForge 3D`,
-      description: peca.descricao || `Confira os detalhes de ${peca.nome} no catálogo 3D.`,
-      images: peca.fotoUrl ? [{ url: peca.fotoUrl }] : [],
-    },
-  };
-}
-
-export default async function CatalogoDetalhePage({ params }: { params: { id: string } }) {
+export default async function PecaDetalhePage({ params }: { params: { id: string } }) {
   const peca = await prisma.peca.findFirst({
     where: {
       id: params.id,
-      publicada: true, // MUST ONLY DISPLAY PUBLIC PIECES
+      publicada: true,
     },
-    select: {
-      id: true,
-      nome: true,
-      descricao: true,
-      categoria: true,
-      fotoUrl: true,
-      status: true,
-      createdAt: true,
-      // CRITICAL SECURITY RULE: Absolutely NO internal cost, printer or filament data fetched!
+    include: {
+      custoImpressao: true,
+      custoPintura: true,
+      custoEmbalagem: true,
+      empresa: {
+        select: {
+          nome: true,
+          slug: true,
+        },
+      },
     },
   });
 
@@ -48,50 +28,31 @@ export default async function CatalogoDetalhePage({ params }: { params: { id: st
     notFound();
   }
 
-  // Fetch public reviews for this piece (Strictly NO sensitive user data)
-  const avaliacoes = await prisma.avaliacao.findMany({
-    where: {
-      pedido: {
-        pecaId: peca.id,
-      },
-    },
-    select: {
-      id: true,
-      nota: true,
-      comentario: true,
-      createdAt: true,
-    },
-    orderBy: { createdAt: "desc" },
-    take: 10,
-  });
-
-  const formattedAvaliacoes = avaliacoes.map((a) => ({
-    id: a.id,
-    nota: a.nota,
-    comentario: a.comentario,
-    createdAt: a.createdAt.toISOString(),
-  }));
-
+  const formattedAvaliacoes: any[] = [];
   let userProfile: { nome: string | null; email: string } | null = null;
-  let isLoggedIn = false;
 
   try {
-    const profile = await getCurrentProfile();
-    if (profile && profile.status === "aprovado") {
-      isLoggedIn = true;
-      userProfile = {
-        nome: profile.nome,
-        email: profile.email,
-      };
+    const supabase = await createClient();
+    const { data: authData } = await supabase.auth.getUser();
+    if (authData?.user) {
+      const p = await prisma.profile.findUnique({
+        where: { id: authData.user.id },
+        select: { nome: true, email: true },
+      });
+      if (p) {
+        userProfile = { nome: p.nome, email: p.email };
+      }
     }
-  } catch {}
+  } catch {
+    // Guest view
+  }
 
   return (
     <CatalogoDetalheClient
       peca={peca}
-      isLoggedIn={isLoggedIn}
-      userProfile={userProfile}
+      isLoggedIn={!!userProfile}
       avaliacoes={formattedAvaliacoes}
+      userProfile={userProfile}
     />
   );
 }

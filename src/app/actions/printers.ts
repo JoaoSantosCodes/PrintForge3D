@@ -39,7 +39,7 @@ export async function createPrinterAction(formData: FormData) {
       data: {
         empresaId,
         nome: validated.nome,
-        modelo: validated.modelo,
+        modelo: validated.modelo || validated.nome,
         consumoWatts: validated.consumoWatts,
         preco: validated.preco,
         vidaUtilHoras: validated.vidaUtilHoras,
@@ -73,7 +73,6 @@ export async function updatePrinterAction(id: string, formData: FormData) {
 
     const validated = printerSchema.parse(rawData);
 
-    // Garante que só atualiza se for da empresa atual
     const existing = await prisma.printer.findFirst({
       where: { id, empresaId },
     });
@@ -85,7 +84,7 @@ export async function updatePrinterAction(id: string, formData: FormData) {
       where: { id },
       data: {
         nome: validated.nome,
-        modelo: validated.modelo,
+        modelo: validated.modelo || validated.nome,
         consumoWatts: validated.consumoWatts,
         preco: validated.preco,
         vidaUtilHoras: validated.vidaUtilHoras,
@@ -117,6 +116,7 @@ export async function deletePrinterAction(id: string) {
     await prisma.printer.delete({
       where: { id },
     });
+
     revalidatePath("/admin/impressoras");
     return { success: true };
   } catch (err: any) {
@@ -124,7 +124,7 @@ export async function deletePrinterAction(id: string) {
   }
 }
 
-export async function registrarManutencaoAction(id: string) {
+export async function resetPrinterMaintenanceAction(id: string) {
   try {
     const empresaId = await getEmpresaIdAtual();
 
@@ -138,8 +138,7 @@ export async function registrarManutencaoAction(id: string) {
     await prisma.printer.update({
       where: { id },
       data: {
-        horasUsoAcumuladas: 0,
-        ultimaManutencao: new Date(),
+        horasTrabalhadas: 0,
       },
     });
     revalidatePath("/admin/impressoras");
@@ -147,4 +146,8 @@ export async function registrarManutencaoAction(id: string) {
   } catch (err: any) {
     return { error: err?.message || "Erro ao registrar manutenção da impressora." };
   }
+}
+
+export async function registrarManutencaoAction(id: string) {
+  return resetPrinterMaintenanceAction(id);
 }

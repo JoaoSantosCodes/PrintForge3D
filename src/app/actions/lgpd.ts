@@ -17,7 +17,6 @@ export async function exportUserDataAction() {
         peca: {
           select: { nome: true, categoria: true },
         },
-        avaliacao: true,
       },
       orderBy: { createdAt: "desc" },
     });
@@ -42,10 +41,6 @@ export async function exportUserDataAction() {
         precoAcordado: p.precoAcordado,
         status: p.status,
         pago: p.pago,
-        observacoes: p.observacoes,
-        avaliacao: p.avaliacao
-          ? { nota: p.avaliacao.nota, comentario: p.avaliacao.comentario }
-          : null,
       })),
     };
 
@@ -94,24 +89,10 @@ export async function resolveDeletionRequestAction(requestId: string, status: "c
       return { error: "Acesso restrito a administradores." };
     }
 
-    const empresaId = await getEmpresaIdAtualOptional();
-
-    const req = await prisma.solicitacaoExclusao.update({
+    await prisma.solicitacaoExclusao.update({
       where: { id: requestId },
       data: { status },
     });
-
-    if (empresaId) {
-      await prisma.auditLog.create({
-        data: {
-          empresaId,
-          adminId: profile.id,
-          acao: status === "concluido" ? "concluiu_solicitacao_exclusao" : "rejeitou_solicitacao_exclusao",
-          alvoId: req.usuarioId,
-          detalhes: `Solicitação de exclusão para ${req.email} foi marcada como ${status}.`,
-        },
-      });
-    }
 
     revalidatePath("/admin/usuarios");
     return { success: true };

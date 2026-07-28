@@ -218,7 +218,7 @@ export async function savePecaAction(formData: FormData) {
       await prisma.printer.updateMany({
         where: { id: v.printerId, empresaId },
         data: {
-          horasUsoAcumuladas: { increment: v.tempoHorasImpressao },
+          horasTrabalhadas: { increment: v.tempoHorasImpressao },
         },
       }).catch(() => {});
     }

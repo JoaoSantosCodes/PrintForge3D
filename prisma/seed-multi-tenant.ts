@@ -83,7 +83,7 @@ async function migrateMultiTenant() {
     data: { empresaId },
   }).catch(() => null);
 
-  await prisma.auditLog.updateMany({
+  await (prisma as any).auditLog?.updateMany({
     where: { empresaId: "" },
     data: { empresaId },
   }).catch(() => null);

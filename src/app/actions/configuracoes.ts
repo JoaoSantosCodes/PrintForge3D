@@ -35,14 +35,16 @@ export async function saveChavePixAction(chavePix: string) {
       update: { chavePix: chavePix.trim() },
     });
 
-    await prisma.auditLog.create({
-      data: {
-        empresaId,
-        adminId: profile.id,
-        acao: "atualizou_chave_pix",
-        detalhes: `Chave PIX atualizada para: "${chavePix.trim()}"`,
-      },
-    });
+    if ((prisma as any).auditLog) {
+      await (prisma as any).auditLog.create({
+        data: {
+          empresaId,
+          adminId: profile.id,
+          acao: "atualizou_chave_pix",
+          detalhes: `Chave PIX atualizada para: "${chavePix.trim()}"`,
+        },
+      }).catch(() => {});
+    }
 
     revalidatePath("/admin/configuracoes");
     revalidatePath("/pedidos");

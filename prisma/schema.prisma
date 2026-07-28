@@ -1,122 +1,114 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
-}
-
-model Profile {
-  id                  String              @id // Mesmo ID do Supabase Auth (auth.users.id)
-  email               String              @unique
-  nome                String?
-  role                String              @default("usuario") // "super_admin" | "admin" | "usuario"
-  status              String              @default("pendente") // "pendente" | "aprovado" | "bloqueado"
-  empresaId           String?
-  empresa             Empresa?            @relation(fields: [empresaId], references: [id], onDelete: SetNull)
-
-  // Sistema de Indicação Binário (Perna Esquerda / Direita)
-  codigoIndicacao     String?             @unique
-  indicadorId         String?
-  pernaIndicacao      String?             // "esquerda" | "direita"
-  posicaoPreferencial String              @default("auto") // "auto" | "esquerda" | "direita"
-  indicador           Profile?            @relation("ArvoreIndicacao", fields: [indicadorId], references: [id], onDelete: SetNull)
-  indicados           Profile[]           @relation("ArvoreIndicacao")
-
-  createdAt           DateTime            @default(now())
-  aprovadoEm          DateTime?
-
-  pedidos             Pedido[]
-  indicacoesOrigem    IndicacaoRegistro[] @relation("RegistroIndicador")
-  indicacoesDestino   IndicacaoRegistro[] @relation("RegistroIndicado")
-}
-
-model IndicacaoRegistro {
-  id          String   @id @default(cuid())
-  indicadorId String
-  indicador   Profile  @relation("RegistroIndicador", fields: [indicadorId], references: [id], onDelete: Cascade)
-  indicadoId  String
-  indicado   Profile  @relation("RegistroIndicado", fields: [indicadoId], references: [id], onDelete: Cascade)
-  perna       String   // "esquerda" | "direita"
-  pontos      Float    @default(0)
-  status      String   @default("ativo") // "ativo" | "inativo"
-  createdAt   DateTime @default(now())
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model Plano {
-  id                String    @id @default(cuid())
-  nome              String    // ex: "Starter", "Pro", "Business"
-  slug              String    @unique
-  precoMensal       Float
+  id               String    @id @default(cuid())
+  nome             String    // ex: "Starter", "Pro", "Business"
+  slug             String    @unique
+  precoMensal      Float
   limiteImpressoras Int
-  limitePecas       Int
-  limitePedidosMes  Int
-  limiteUsuarios    Int       // funcionários/atendentes da empresa, se aplicável
-  ativo             Boolean   @default(true)
-  createdAt         DateTime  @default(now())
+  limitePecas      Int
+  limitePedidosMes Int
+  limiteUsuarios   Int       @default(5)
+  ativo            Boolean   @default(true)
+  createdAt        DateTime  @default(now())
 
-  empresas          Empresa[]
+  empresas         Empresa[]
 }
 
 model Empresa {
-  id               String    @id @default(cuid())
-  nome             String
-  slug             String    @unique // usado na URL pública /loja/[slug]
-  planoId          String
-  plano            Plano     @relation(fields: [planoId], references: [id])
-  status           String    @default("trial") // trial | ativo | inadimplente | cancelado | bloqueado | trial_expirado
-  trialExpiraEm    DateTime?
-  proximaCobranca  DateTime?
-  chavePixCobranca String?   // chave PIX da EMPRESA para receber de SEUS clientes (diferente da assinatura)
-  createdAt        DateTime  @default(now())
+  id              String      @id @default(cuid())
+  nome            String
+  slug            String      @unique
+  planoId         String
+  plano           Plano       @relation(fields: [planoId], references: [id])
+  status          String      @default("trial") // trial | ativo | inadimplente | cancelado | bloqueado | trial_expirado
+  trialExpiraEm   DateTime?
+  proximaCobranca DateTime?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
 
-  profiles         Profile[]
-  printers         Printer[]
-  filaments        Filament[]
-  filamentPrices   FilamentPriceHistory[]
-  tintas           Tinta[]
-  pecas            Peca[]
-  pedidos          Pedido[]
-  cupons           Cupom[]
-  configuracoes    Configuracao[]
-  auditLogs        AuditLog[]
+  profiles        Profile[]
+  printers        Printer[]
+  filaments       Filament[]
+  tintas          Tinta[]
+  pecas           Peca[]
+  pedidos         Pedido[]
+  cupons          Cupom[]
+  configuracao    Configuracao?
+  filamentPriceHistories FilamentPriceHistory[]
 }
 
-model AuditLog {
-  id          String   @id @default(cuid())
-  empresaId   String
-  empresa     Empresa  @relation(fields: [empresaId], references: [id], onDelete: Cascade)
-  adminId     String   // Profile.id de quem executou a ação
-  acao        String   // ex: "aprovou_usuario", "bloqueou_usuario", "reativou_usuario"
-  alvoId      String?  // Profile.id do usuário afetado, quando aplicável
-  detalhes    String?  // texto livre opcional
-  createdAt   DateTime @default(now())
+model Profile {
+  id                  String   @id // Supabase auth.users id
+  email               String   @unique
+  nome                String?
+  role                String   @default("admin") // super_admin | admin | funcionario | cliente
+  status              String   @default("aprovado") // pendente | aprovado | bloqueado
+  aprovadoEm          DateTime?
+  empresaId           String?
+  empresa             Empresa? @relation(fields: [empresaId], references: [id], onDelete: SetNull)
+  
+  // Sistema de Indicação & Rede Binária
+  codigoIndicacao     String?  @unique
+  indicadorId         String?
+  indicador           Profile? @relation("ArvoreIndicacao", fields: [indicadorId], references: [id], onDelete: SetNull)
+  indicados           Profile[] @relation("ArvoreIndicacao")
+  pernaIndicacao      String?  @default("esquerda") // esquerda | direita
+  posicaoPreferencial String?  @default("auto")     // auto | esquerda | direita
+
+  createdAt           DateTime @default(now())
+
+  pedidos             Pedido[]
+  registrosIndicado   IndicacaoRegistro[] @relation("RegistroIndicado")
+  registrosIndicador  IndicacaoRegistro[] @relation("RegistroIndicador")
+  rewardTransactions  RewardTransaction[]
+  rewardRedemptions   RewardRedemption[]
+  achievements        AchievementUser[]
+  missionProgresses   MissionProgress[]
+}
+
+model IndicacaoRegistro {
+  id           String   @id @default(cuid())
+  indicadorId  String
+  indicador    Profile  @relation("RegistroIndicador", fields: [indicadorId], references: [id], onDelete: Cascade)
+  indicadoId   String
+  indicado     Profile  @relation("RegistroIndicado", fields: [indicadoId], references: [id], onDelete: Cascade)
+  perna        String   // esquerda | direita
+  pontos       Int      @default(120)
+  createdAt    DateTime @default(now())
 }
 
 model Printer {
-  id                      String    @id @default(cuid())
-  empresaId               String
-  empresa                 Empresa   @relation(fields: [empresaId], references: [id], onDelete: Cascade)
-  nome                    String
-  modelo                  String?
-  consumoWatts            Float
-  preco                   Float
-  vidaUtilHoras           Float
-  custoManutencaoAno      Float     @default(0)
-  horasUsoAcumuladas      Float     @default(0.0) // Horas de uso acumuladas desde a última manutenção
-  ultimaManutencao        DateTime? // Data da última manutenção preventiva
-  intervaloManutencaoHoras Float    @default(200.0) // Intervalo em horas para manutenção preventiva
-  createdAt               DateTime  @default(now())
+  id                 String   @id @default(cuid())
+  empresaId          String
+  empresa            Empresa  @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  nome               String
+  modelo             String
+  preco              Float
+  consumoWatts       Float
+  vidaUtilHoras      Float
+  horasTrabalhadas   Float    @default(0)
+  custoManutencaoAno Float    @default(0)
+  createdAt          DateTime @default(now())
 }
 
 model Filament {
   id                 String                 @id @default(cuid())
   empresaId          String
   empresa            Empresa                @relation(fields: [empresaId], references: [id], onDelete: Cascade)
-  marca              String?
-  tipo               String                 // PLA, PETG, ABS, ASA, TPU, Resina
+  nome               String
+  marca              String
+  material           String // PLA, ABS, PETG, TPU, Resina, etc.
   cor                String
   precoPorKg         Float
   pesoRestanteGramas Float                  @default(1000.0) // Peso restante em gramas
@@ -173,27 +165,14 @@ model Pedido {
   clienteContato String?    // telefone/whatsapp
   status         String     @default("pendente") // pendente | aguardando_pagamento | em_impressao | pintando | pronto | enviado | entregue | cancelado
   pago           Boolean    @default(false)
+  precoAcordado  Float      @default(0)
+  quantidade     Int        @default(1)
   cupomCodigo    String?
   pecaId         String
   peca           Peca       @relation(fields: [pecaId], references: [id], onDelete: Cascade)
   usuarioId      String?
   usuario        Profile?   @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
-  quantidade     Int        @default(1)
-  precoAcordado  Float?
-  observacoes    String?
   createdAt      DateTime   @default(now())
-  updatedAt      DateTime   @updatedAt
-
-  avaliacao      Avaliacao?
-}
-
-model Avaliacao {
-  id          String   @id @default(cuid())
-  pedidoId    String   @unique
-  pedido      Pedido   @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
-  nota        Int      // 1 a 5
-  comentario  String?
-  createdAt   DateTime @default(now())
 }
 
 model CustoImpressao {
@@ -252,4 +231,104 @@ model Cupom {
   createdAt          DateTime  @default(now())
 
   @@unique([empresaId, codigo])
+}
+
+// -------------------------------------------------------------
+// PRINTFORGE REWARDS — PROGRAMA DE RECOMPENSAS GAMIFICADO
+// -------------------------------------------------------------
+
+model RewardLevel {
+  id            String   @id @default(cuid())
+  nome          String   // Bronze, Prata, Ouro, Diamante, Platinum, Elite
+  slug          String   @unique
+  pontosMinimos Int
+  icone         String   // Nome do ícone Lucide ou emoji
+  cor           String   // HSL ou Hex de destaque
+  beneficio     String
+  badge         String
+}
+
+model RewardCatalog {
+  id               String             @id @default(cuid())
+  nome             String             // ex: "Filamento PLA Branco 1kg"
+  descricao        String
+  imagemUrl        String?
+  categoria        String             // filamentos | resinas | pecas | acessorios | cupons | creditos | brindes | premium
+  tipo             String             // fisico | digital
+  pontosNecessarios Int
+  estoque          Int                @default(100)
+  ativo            Boolean            @default(true)
+  createdAt        DateTime           @default(now())
+
+  resgates         RewardRedemption[]
+}
+
+model RewardRedemption {
+  id           String        @id @default(cuid())
+  profileId    String
+  profile      Profile       @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  rewardId     String
+  reward       RewardCatalog @relation(fields: [rewardId], references: [id], onDelete: Cascade)
+  pontosGastos Int
+  status       String        @default("pendente") // pendente | aprovado | enviado | concluido | cancelado
+  codigoCupom  String?
+  createdAt    DateTime      @default(now())
+}
+
+model RewardTransaction {
+  id        String   @id @default(cuid())
+  profileId String
+  profile   Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  pontos    Int      // positivo para crédito, negativo para débito
+  tipo      String   // credito | debito
+  evento    String   // cadastro | loja_criada | primeira_assinatura | renovacao | upgrade | primeira_venda | resgate
+  descricao String
+  createdAt DateTime @default(now())
+}
+
+model Achievement {
+  id               String            @id @default(cuid())
+  nome             String
+  descricao        String
+  icone            String
+  raridade         String            // comum | rara | epica | lendaria
+  pontosRecompensa Int               @default(100)
+
+  usuarios         AchievementUser[]
+}
+
+model AchievementUser {
+  id            String      @id @default(cuid())
+  profileId     String
+  profile       Profile     @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  achievementId String
+  achievement   Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+  conquistadoEm DateTime    @default(now())
+
+  @@unique([profileId, achievementId])
+}
+
+model Mission {
+  id               String            @id @default(cuid())
+  titulo           String
+  descricao        String
+  categoria        String            // diaria | semanal | mensal
+  pontosRecompensa Int
+  meta             Int               @default(1)
+  ativo            Boolean           @default(true)
+
+  progresses       MissionProgress[]
+}
+
+model MissionProgress {
+  id            String   @id @default(cuid())
+  profileId     String
+  profile       Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  missionId     String
+  mission       Mission  @relation(fields: [missionId], references: [id], onDelete: Cascade)
+  progressoAtual Int      @default(0)
+  concluida     Boolean  @default(false)
+  concluidaEm   DateTime?
+
+  @@unique([profileId, missionId])
 }

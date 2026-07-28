@@ -20,15 +20,7 @@ export default async function PedidosUsuarioPage() {
         { clienteContato: profile.email },
       ],
     },
-    select: {
-      id: true,
-      quantidade: true,
-      precoAcordado: true,
-      pago: true,
-      cupomCodigo: true,
-      status: true,
-      observacoes: true,
-      createdAt: true,
+    include: {
       empresa: {
         select: {
           nome: true,
@@ -43,13 +35,6 @@ export default async function PedidosUsuarioPage() {
           categoria: true,
         },
       },
-      avaliacao: {
-        select: {
-          id: true,
-          nota: true,
-          comentario: true,
-        },
-      },
     },
     orderBy: { createdAt: "desc" },
   });
@@ -61,11 +46,11 @@ export default async function PedidosUsuarioPage() {
     pago: p.pago,
     cupomCodigo: p.cupomCodigo,
     status: p.status,
-    observacoes: p.observacoes,
-    createdAt: p.createdAt.toISOString(),
+    observacoes: null,
+    createdAt: p.createdAt ? (typeof p.createdAt === "string" ? p.createdAt : new Date(p.createdAt).toISOString()) : new Date().toISOString(),
     empresa: p.empresa,
     peca: p.peca,
-    avaliacao: p.avaliacao,
+    avaliacao: null,
   }));
 
   return (

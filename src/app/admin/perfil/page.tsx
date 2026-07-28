@@ -14,10 +14,14 @@ export default async function AdminPerfilPage() {
   const formattedProfile = {
     id: profile.id,
     email: profile.email,
-    nome: profile.nome,
+    nome: profile.nome ?? null,
     role: profile.role,
     status: profile.status,
-    createdAt: profile.createdAt.toISOString(),
+    createdAt: profile.createdAt
+      ? typeof profile.createdAt === "string"
+        ? profile.createdAt
+        : new Date(profile.createdAt).toISOString()
+      : new Date().toISOString(),
   };
 
   return <PerfilClient profile={formattedProfile} />;
