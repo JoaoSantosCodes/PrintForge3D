@@ -43,10 +43,12 @@ export async function processarIndicacaoNovaEmpresa({
     // 4. Criar ReferralEvent de nível único
     const referralEvent = await prisma.referralEvent.create({
       data: {
+        empresaId: empresaIndicadora.id,
         indicadorEmpresaId: empresaIndicadora.id,
         indicadoEmpresaId,
         codigoUsado: codigoTratado,
         status: "loja_criada",
+        tipo: "indicacao",
       },
     });
 

@@ -220,7 +220,7 @@ export async function savePecaAction(formData: FormData) {
         const referralEvent = await prisma.referralEvent.findFirst({
           where: { indicadoEmpresaId: empresaId },
         });
-        if (referralEvent) {
+        if (referralEvent && referralEvent.indicadorEmpresaId) {
           await concederPontos(
             referralEvent.indicadorEmpresaId,
             "primeiro_produto",

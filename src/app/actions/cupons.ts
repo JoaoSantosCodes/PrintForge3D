@@ -36,8 +36,11 @@ export async function createCupomAction(formData: FormData) {
       data: {
         empresaId,
         codigo,
+        desconto: percentualDesconto,
         percentualDesconto,
+        tipo: "porcentagem",
         validoAte,
+        validade: validoAte,
         ativo: true,
       },
     });

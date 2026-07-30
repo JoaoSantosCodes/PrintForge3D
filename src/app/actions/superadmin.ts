@@ -35,7 +35,7 @@ export async function marcarMensalidadePagaAction(empresaId: string) {
       where: { indicadoEmpresaId: empresaId },
     });
 
-    if (referralEvent) {
+    if (referralEvent && referralEvent.indicadorEmpresaId) {
       if (referralEvent.status !== "assinatura_paga") {
         await prisma.referralEvent.update({
           where: { id: referralEvent.id },
@@ -106,7 +106,7 @@ export async function alterarPlanoEmpresaAction(empresaId: string, planoId: stri
       where: { indicadoEmpresaId: empresaId },
     });
 
-    if (referralEvent) {
+    if (referralEvent && referralEvent.indicadorEmpresaId) {
       await concederPontos(
         referralEvent.indicadorEmpresaId,
         "upgrade_plano",

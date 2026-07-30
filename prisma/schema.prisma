@@ -50,6 +50,7 @@ model Empresa {
   pedidos                Pedido[]
   cupons                 Cupom[]
   configuracao           Configuracao?
+  companySettings        CompanySettings?
   filamentPriceHistories FilamentPriceHistory[]
 
   rewardTransactions     RewardTransaction[]
@@ -57,10 +58,25 @@ model Empresa {
   achievements           AchievementUnlocked[]
   missionProgresses      MissionProgress[]
   digitalAssets          DigitalAsset[]
+  printerTelemetries     PrinterTelemetry[]
+  timelineEvents         TimelineEvent[]
+  auditLogs              AuditLog[]
+  aiConversations        AiConversation[]
+  aiMemories             AiMemory[]
+  referralEvents         ReferralEvent[]
 
   @@index([status])
   @@index([planoId])
   @@index([indicadoPor])
+  @@index([id, status])
+}
+
+model CompanySettings {
+  id          String   @id @default(cuid())
+  empresaId   String   @unique
+  empresa     Empresa  @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  payloadJson String   @default("{}") // Configurações em JSONB (markup, moeda, impostos MEI, telegram)
+  updatedAt   DateTime @updatedAt
 }
 
 model Profile {
@@ -76,10 +92,24 @@ model Profile {
   createdAt           DateTime  @default(now())
 
   pedidos             Pedido[]
+  solicitacoesExclusao SolicitacaoExclusao[]
 
   @@index([empresaId])
   @@index([role])
   @@index([status])
+}
+
+model SolicitacaoExclusao {
+  id        String   @id @default(cuid())
+  profileId String?
+  usuarioId String?
+  email     String?
+  profile   Profile? @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  status    String   @default("pendente")
+  motivo    String?
+  createdAt DateTime @default(now())
+
+  @@index([profileId])
 }
 
 model Printer {
@@ -95,7 +125,56 @@ model Printer {
   custoManutencaoAno Float    @default(0)
   createdAt          DateTime @default(now())
 
+  profiles           PrinterProfile[]
+  telemetries        PrinterTelemetry[]
+  maintenances       PrinterMaintenance[]
+
   @@index([empresaId])
+  @@index([empresaId, id])
+}
+
+model PrinterProfile {
+  id                 String   @id @default(cuid())
+  printerId          String
+  printer            Printer  @relation(fields: [printerId], references: [id], onDelete: Cascade)
+  tipoBicoMm         Float    @default(0.4)
+  temperaturaMaxBico Int      @default(300)
+  temperaturaMaxMesa Int      @default(110)
+  velocidadeMaxMmS   Int      @default(250)
+  aceleracaoMmS2     Int      @default(5000)
+  firmware           String?  @default("Marlin / Klipper / BambuOS")
+
+  @@index([printerId])
+}
+
+model PrinterTelemetry {
+  id              String   @id @default(cuid())
+  empresaId       String
+  empresa         Empresa  @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  printerId       String
+  printer         Printer  @relation(fields: [printerId], references: [id], onDelete: Cascade)
+  timestamp       DateTime @default(now())
+  temperaturaBico Float    @default(0)
+  temperaturaMesa Float    @default(0)
+  velocidadeMmS   Float    @default(0)
+  fanSpeedPercent Int      @default(0)
+  jobAtualId      String?
+  status          String   @default("idle") // idle | printing | paused | error
+
+  @@index([empresaId])
+  @@index([printerId, timestamp])
+}
+
+model PrinterMaintenance {
+  id             String   @id @default(cuid())
+  printerId      String
+  printer        Printer  @relation(fields: [printerId], references: [id], onDelete: Cascade)
+  descricao      String
+  custoBRL       Float    @default(0)
+  tipo           String   @default("preventiva") // preventiva | corretiva
+  dataManutencao DateTime @default(now())
+
+  @@index([printerId])
 }
 
 model Filament {
@@ -157,11 +236,33 @@ model Peca {
   custoImpressao CustoImpressao?
   custoPintura   CustoPintura?
   custoEmbalagem CustoEmbalagem?
+  metricas       PecaMetrics?
+  precificacao   PecaPricing?
   pedidos        Pedido[]
 
   @@index([empresaId])
   @@index([status])
   @@index([publicada])
+  @@index([empresaId, status])
+}
+
+model PecaMetrics {
+  id                   String @id @default(cuid())
+  pecaId               String @unique
+  peca                 Peca   @relation(fields: [pecaId], references: [id], onDelete: Cascade)
+  totalImpressoes      Int    @default(0)
+  taxaSucessoPercentual Float @default(100.0)
+  tempoTotalHoras      Float  @default(0)
+  massaTotalGrams      Float  @default(0)
+}
+
+model PecaPricing {
+  id                       String @id @default(cuid())
+  pecaId                   String @unique
+  peca                     Peca   @relation(fields: [pecaId], references: [id], onDelete: Cascade)
+  margemDesejadaPercentual Float  @default(50.0)
+  precoSugeridoBRL         Float  @default(0)
+  precoCobradoBRL          Float  @default(0)
 }
 
 model Pedido {
@@ -215,86 +316,180 @@ model CustoEmbalagem {
   custoUnitario     Float
 }
 
-model SolicitacaoExclusao {
-  id        String   @id @default(cuid())
-  usuarioId String
-  email     String
-  motivo    String?
-  status    String   @default("pendente") // pendente | concluido | rejeitado
-  createdAt DateTime @default(now())
-}
-
-model Configuracao {
-  id        String   @id @default(cuid())
-  empresaId String   @unique
-  empresa   Empresa  @relation(fields: [empresaId], references: [id], onDelete: Cascade)
-  chavePix  String?
-  updatedAt DateTime @updatedAt
-}
-
 model Cupom {
   id                 String    @id @default(cuid())
   empresaId          String
   empresa            Empresa   @relation(fields: [empresaId], references: [id], onDelete: Cascade)
   codigo             String
-  percentualDesconto Float
+  desconto           Float     @default(0) // Valor ou porcentagem
+  percentualDesconto Float     @default(0) // Alias compatibilidade
+  tipo               String    @default("porcentagem") // "porcentagem" | "fixo"
   ativo              Boolean   @default(true)
-  validoAte          DateTime?
+  validade           DateTime?
+  validoAte          DateTime? // Alias compatibilidade
+  usosAtuais         Int       @default(0)
+  limiteUsos         Int?
   createdAt          DateTime  @default(now())
 
   @@unique([empresaId, codigo])
+  @@index([empresaId])
+}
+
+model Configuracao {
+  id               String   @id @default(cuid())
+  empresaId        String   @unique
+  empresa          Empresa  @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  tarifaEnergiaKwh Float    @default(0.85)
+  margemPadrao     Float    @default(100.0)
+  chavePix         String?
+  updatedAt        DateTime @updatedAt
 }
 
 // -------------------------------------------------------------
-// PRINTFORGE REWARDS — PROGRAMA DE FIDELIDADE E INDICAÇÕES DE NÍVEL ÚNICO
+// DOMÍNIO: DIGITAL ASSET MANAGEMENT (DAM) & ATIVOS 3D
 // -------------------------------------------------------------
 
-model RewardLevel {
-  id            String   @id @default(cuid())
-  nome          String   // Bronze, Prata, Ouro, Diamante, Platinum, Elite
-  pontosMinimos Int
-  icone         String?
-  cor           String?
-  beneficios    String?
-  ordem         Int      @default(1)
+model DigitalAsset {
+  id             String           @id @default(cuid())
+  empresaId      String
+  empresa        Empresa          @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  nome           String
+  descricao      String?
+  tipo           String           // STL | THREE_MF | GCODE | OBJ
+  hashSha256     String           // Fingerprint unívoco
+  versaoAtualId  String?
+  thumbnailUrl   String?
+  status         String           @default("ativo") // ativo | arquivado
+  tags           String[]         @default([])
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  versoes        AssetVersion[]
+  thumbnails     AssetThumbnail[]
+
+  @@index([empresaId])
+  @@index([hashSha256])
+  @@index([tipo])
 }
 
-model RewardPointsConfig {
-  id        String   @id @default(cuid())
-  evento    String   @unique // "novo_cadastro", "loja_criada", "primeira_assinatura", "renovacao_mensal", "upgrade_plano", "primeira_venda", "primeiro_produto", "perfil_completo"
-  pontos    Int
-  ativo     Boolean  @default(true)
-  descricao String?
+model AssetVersion {
+  id                String              @id @default(cuid())
+  assetId           String
+  asset             DigitalAsset        @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  numeroVersao      Int                 @default(1) // v1, v2, v3
+  storageUrl        String
+  hashSha256        String
+  changelog         String?
+  autorProfileId    String?
+  volumeCm3         Float               @default(0)
+  pesoGramas        Float               @default(0)
+  larguraMm         Float               @default(0)
+  profundidadeMm    Float               @default(0)
+  alturaMm          Float               @default(0)
+  poligonosCount    Int                 @default(0)
+  metadadosFatiador String?             // JSON string (slicer, temperaturas, altura camada, etc)
+  createdAt         DateTime            @default(now())
+
+  inspecoesAi       AssetAiInspection[]
+  metadados         AssetMetadata[]
+
+  @@index([assetId])
+  @@index([hashSha256])
 }
+
+model AssetThumbnail {
+  id           String       @id @default(cuid())
+  assetId      String
+  asset        DigitalAsset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  thumbnailUrl String
+  larguraPx    Int          @default(400)
+  alturaPx     Int          @default(400)
+
+  @@index([assetId])
+}
+
+model AssetMetadata {
+  id              String       @id @default(cuid())
+  versionId       String
+  version         AssetVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  slicerDetectado String?
+  softwareVersao  String?
+  perfilJson      String?
+
+  @@index([versionId])
+}
+
+model AssetAiInspection {
+  id                      String       @id @default(cuid())
+  versionId               String
+  version                 AssetVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  scoreWarping            Int          @default(0) // 0-100
+  classificacaoWarping    String       @default("baixo")
+  temParedesFinas         Boolean      @default(false)
+  necessitaSuporte        Boolean      @default(false)
+  temperaturaBicoSugerida  Int          @default(210)
+  temperaturaMesaSugerida Int          @default(60)
+  alertasTecnicos         String[]     @default([])
+  recomendacoesIA         String[]     @default([])
+  createdAt               DateTime     @default(now())
+
+  @@index([versionId])
+}
+
+// -------------------------------------------------------------
+// DOMÍNIO: REWARDS, GAMIFICATION & INDICAÇÕES
+// -------------------------------------------------------------
 
 model RewardTransaction {
   id           String   @id @default(cuid())
   empresaId    String
   empresa      Empresa  @relation(fields: [empresaId], references: [id], onDelete: Cascade)
-  tipo         String   // "credito" | "debito"
-  evento       String   // referencia ao RewardPointsConfig.evento, ou "resgate" para débitos
+  tipo         String   // "ganho" | "resgate" | "expiracao" | "bonus"
+  evento       String?  // Alias compatibilidade
   pontos       Int
-  descricao    String?
-  referenciaId String?  // ex: id do resgate, id do evento de indicação
+  descricao    String
+  referencia   String?  // ID do pedido ou indicação geradora
+  referenciaId String?  // Alias compatibilidade
   createdAt    DateTime @default(now())
 
   @@index([empresaId])
-  @@index([empresaId, tipo])
-  @@index([referenciaId])
 }
 
 model ReferralEvent {
   id                 String   @id @default(cuid())
-  indicadorEmpresaId String   // empresa que indicou
-  indicadoEmpresaId  String?  // empresa criada a partir da indicação, se já existir
-  codigoUsado        String
-  status             String   @default("cadastro_iniciado") // cadastro_iniciado | loja_criada | trial | assinatura_paga | cancelado
+  empresaId          String
+  empresa            Empresa  @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  indicadorEmpresaId String?
+  indicadoEmpresaId  String?  // Alias compatibilidade
+  codigoUsado        String?
+  tipo               String
+  status             String   @default("aprovado") // aprovado | pendente
+  pontos             Int      @default(0)
+  descricao          String?
   createdAt          DateTime @default(now())
-  atualizadoEm       DateTime @updatedAt
 
-  @@index([indicadorEmpresaId])
-  @@index([indicadoEmpresaId])
-  @@index([status])
+  @@index([empresaId])
+}
+
+model RewardPointsConfig {
+  id        String  @id @default(cuid())
+  evento    String  @unique
+  pontos    Int     @default(10)
+  descricao String?
+  ativo     Boolean @default(true)
+}
+
+model RewardLevel {
+  id            String  @id @default(cuid())
+  nome          String
+  nivel         Int     @default(1) // Level 1, 2, 3
+  ordem         Int     @default(1)
+  minPontos     Int     @default(0)
+  pontosMinimos Int     @default(0) // Alias compatibilidade
+  multiplicador Float   @default(1.0)
+  icone         String?
+  cor           String?
+  beneficios    String?
 }
 
 model RewardCatalogItem {
@@ -381,66 +576,88 @@ model MissionProgress {
   @@index([empresaId])
 }
 
-model DigitalAsset {
-  id             String         @id @default(cuid())
-  empresaId      String
-  empresa        Empresa        @relation(fields: [empresaId], references: [id], onDelete: Cascade)
-  nome           String
-  descricao      String?
-  tipo           String         // STL | THREE_MF | GCODE | OBJ
-  hashSha256     String         // Fingerprint unívoco
-  versaoAtualId  String?
-  thumbnailUrl   String?
-  status         String         @default("ativo") // ativo | arquivado
-  tags           String[]       @default([])
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
+// -------------------------------------------------------------
+// DOMÍNIO: INTELIGÊNCIA ARTIFICIAL & COPILOT MEMORY ENGINE
+// -------------------------------------------------------------
 
-  versoes        AssetVersion[]
+model AiConversation {
+  id        String   @id @default(cuid())
+  empresaId String
+  empresa   Empresa  @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  titulo    String
+  usuarioId String?
+  createdAt DateTime @default(now())
 
   @@index([empresaId])
-  @@index([hashSha256])
-  @@index([tipo])
 }
 
-model AssetVersion {
-  id                String              @id @default(cuid())
-  assetId           String
-  asset             DigitalAsset        @relation(fields: [assetId], references: [id], onDelete: Cascade)
-  numeroVersao      Int                 @default(1) // v1, v2, v3
-  storageUrl        String
-  hashSha256        String
-  changelog         String?
-  autorProfileId    String?
-  volumeCm3         Float               @default(0)
-  pesoGramas        Float               @default(0)
-  larguraMm         Float               @default(0)
-  profundidadeMm    Float               @default(0)
-  alturaMm          Float               @default(0)
-  poligonosCount    Int                 @default(0)
-  metadadosFatiador String?             // JSON string (slicer, temperaturas, altura camada, etc)
-  createdAt         DateTime            @default(now())
+model AiMemory {
+  id        String   @id @default(cuid())
+  empresaId String
+  empresa   Empresa  @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  chave     String
+  valorJson String   @default("{}")
+  updatedAt DateTime @updatedAt
 
-  inspecoesAi       AssetAiInspection[]
-
-  @@index([assetId])
-  @@index([hashSha256])
+  @@unique([empresaId, chave])
+  @@index([empresaId])
 }
 
-model AssetAiInspection {
-  id                      String       @id @default(cuid())
-  versionId               String
-  version                 AssetVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
-  scoreWarping            Int          @default(0) // 0-100
-  classificacaoWarping    String       @default("baixo")
-  temParedesFinas         Boolean      @default(false)
-  necessitaSuporte        Boolean      @default(false)
-  temperaturaBicoSugerida  Int          @default(210)
-  temperaturaMesaSugerida Int          @default(60)
-  alertasTecnicos         String[]     @default([])
-  recomendacoesIA         String[]     @default([])
-  createdAt               DateTime     @default(now())
+// -------------------------------------------------------------
+// DOMÍNIO: UNIVERSAL TIMELINE & AUDIT LOGS
+// -------------------------------------------------------------
 
-  @@index([versionId])
+model TimelineEvent {
+  id          String   @id @default(cuid())
+  empresaId   String
+  empresa     Empresa  @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  entityType  String   // PECA | PEDIDO | JOB | IMPRESSORA | ATIVO_3D
+  entityId    String
+  event       String   // ex: "CRIADO", "FATIAMENTO_CONCLUIDO", "IMPRESSAO_INICIADA", "ENTREGUE"
+  payloadJson String   @default("{}") // JSONB estendido com snapshot do evento
+  createdAt   DateTime @default(now())
+
+  @@index([empresaId])
+  @@index([entityType, entityId])
+  @@index([createdAt])
 }
 
+model AuditLog {
+  id          String   @id @default(cuid())
+  empresaId   String
+  empresa     Empresa  @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  usuarioId   String?
+  acao        String
+  recurso     String
+  ip          String?
+  payloadJson String   @default("{}")
+  createdAt   DateTime @default(now())
+
+  @@index([empresaId])
+  @@index([createdAt])
+}
+
+model SecurityLog {
+  id           String   @id @default(cuid())
+  empresaId    String?
+  tipoEvento   String   // LOGIN_FALHO | TENTATIVA_INVASAO | ACCESS_DENIED
+  severidade   String   @default("info") // info | warning | critical
+  detalhesJson String   @default("{}")
+  createdAt    DateTime @default(now())
+
+  @@index([tipoEvento])
+  @@index([createdAt])
+}
+
+model SystemLog {
+  id           String   @id @default(cuid())
+  modulo       String
+  nivel        String   @default("info") // info | warn | error
+  mensagem     String
+  contextoJson String   @default("{}")
+  createdAt    DateTime @default(now())
+
+  @@index([modulo])
+  @@index([nivel])
+  @@index([createdAt])
+}

@@ -101,7 +101,7 @@ async function checarPrimeiraVenda(empresaId: string, pedidoId: string) {
       const referralEvent = await prisma.referralEvent.findFirst({
         where: { indicadoEmpresaId: empresaId },
       });
-      if (referralEvent) {
+      if (referralEvent && referralEvent.indicadorEmpresaId) {
         await concederPontos(
           referralEvent.indicadorEmpresaId,
           "primeira_venda",

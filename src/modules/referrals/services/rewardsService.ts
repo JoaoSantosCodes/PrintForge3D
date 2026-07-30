@@ -120,7 +120,7 @@ export async function getVendedorRewardsData(empresaId: string) {
       timeline: transacoesRecentes.map((t) => ({
         id: t.id,
         tipo: t.tipo,
-        evento: t.evento,
+        evento: t.evento || "bonus",
         pontos: t.pontos,
         descricao: t.descricao,
         data: t.createdAt.toISOString(),
@@ -190,7 +190,7 @@ export async function getSuperAdminRewardsData() {
       _count: { _all: true },
     });
 
-    const statusMap = new Map(contagemStatus.map((s) => [s.status, s._count._all]));
+    const statusMap = new Map((contagemStatus as any[]).map((s) => [s.status, s._count._all]));
 
     const funil = [
       { etapa: "Cadastro Iniciado", count: statusMap.get("cadastro_iniciado") || 0, cor: "#6366f1" },
