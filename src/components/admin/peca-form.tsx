@@ -3,11 +3,13 @@
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Save, Upload, Calculator, Sparkles, AlertCircle, FileCode, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Save, Upload, Calculator, Sparkles, AlertCircle, FileCode, CheckCircle2, Box } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatarMoeda, calcularCustoPeca, LIMIAR_MARGEM_BAIXA_PERCENTUAL } from "@/lib/custos";
 import { savePecaAction } from "@/app/actions/pecas";
 import { parseGCodeContent, GCodeMetadata } from "@/lib/gcode-parser";
+import { StlViewer } from "@/components/3d/StlViewer";
+import { STLAnalysisResult } from "@/modules/production/services/stlParserService";
 
 interface PecaFormProps {
   printers: any[];
@@ -20,6 +22,40 @@ export default function PecaForm({ printers, filaments, initialData }: PecaFormP
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [gcodeMsg, setGcodeMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [stlBuffer, setStlBuffer] = useState<ArrayBuffer | null>(null);
+  const [stlMsg, setStlMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  const handleSTLUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setStlMsg(null);
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const buffer = event.target?.result as ArrayBuffer;
+        setStlBuffer(buffer);
+        setStlMsg({
+          type: "success",
+          text: `Modelo 3D "${file.name}" carregado! Visualização 3D ativa e métricas calculadas.`,
+        });
+      } catch (err: any) {
+        setStlMsg({
+          type: "error",
+          text: err.message || "Erro ao ler arquivo STL.",
+        });
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  };
+
+  const handleSTLAnalysisComplete = (analysis: STLAnalysisResult) => {
+    const tipoMat = selectedFilament?.tipo?.toUpperCase() || "PLA";
+    const pesoCalculado = analysis.estimatedWeightGrams[tipoMat] || analysis.estimatedWeightGrams.PLA;
+    if (pesoCalculado && pesoCalculado > 0) {
+      setPesoGramas(pesoCalculado);
+    }
+  };
 
   // Form State
   const [nome, setNome] = useState(initialData?.nome || "");
@@ -328,6 +364,54 @@ export default function PecaForm({ printers, filaments, initialData }: PecaFormP
             <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100 pb-2 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
               <span>2. Custo de Impressão (Material + Energia + Depreciação)</span>
             </h2>
+
+            {/* 3D STL Model Upload & Interactive Viewer Card */}
+            <div className="p-4 bg-slate-900 border border-blue-500/30 rounded-2xl space-y-3">
+              <div className="flex items-center gap-2 text-xs font-bold text-blue-400">
+                <Box className="w-4 h-4 text-blue-400" />
+                <span>Visualizador 3D Interativo & Cálculo Físico de STL</span>
+              </div>
+              <p className="text-[11px] text-slate-400">
+                Selecione um arquivo .stl para visualizar o modelo em 3D interativo, girar em 360° e calcular automaticamente o volume ($cm^3$), dimensões ($X \times Y \times Z$ mm) e peso em gramas do filamento.
+              </p>
+
+              <input
+                type="file"
+                accept=".stl"
+                onChange={handleSTLUpload}
+                className="w-full text-xs text-slate-400 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-blue-500/20 file:text-blue-300 hover:file:bg-blue-500/30 cursor-pointer"
+              />
+
+              {stlMsg && (
+                <div
+                  className={`p-3 rounded-xl text-xs font-semibold flex items-center gap-2 ${
+                    stlMsg.type === "success"
+                      ? "bg-blue-500/10 border border-blue-500/20 text-blue-300"
+                      : "bg-rose-500/10 border border-rose-500/20 text-rose-300"
+                  }`}
+                >
+                  {stlMsg.type === "success" ? (
+                    <CheckCircle2 className="w-4 h-4 text-blue-400 shrink-0" />
+                  ) : (
+                    <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+                  )}
+                  <span>{stlMsg.text}</span>
+                </div>
+              )}
+
+              {/* Visualizador 3D Canvas */}
+              {(stlBuffer || initialData?.stlUrl) && (
+                <div className="mt-3">
+                  <StlViewer
+                    fileBuffer={stlBuffer || undefined}
+                    url={initialData?.stlUrl}
+                    height="360px"
+                    materialColor="#3b82f6"
+                    onAnalysisComplete={handleSTLAnalysisComplete}
+                  />
+                </div>
+              )}
+            </div>
 
             {/* G-Code Importer Card */}
             <div className="p-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800/80 rounded-2xl space-y-2">
