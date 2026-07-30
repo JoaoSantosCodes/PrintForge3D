@@ -56,6 +56,7 @@ model Empresa {
   rewardRedemptions      RewardRedemption[]
   achievements           AchievementUnlocked[]
   missionProgresses      MissionProgress[]
+  digitalAssets          DigitalAsset[]
 
   @@index([status])
   @@index([planoId])
@@ -379,3 +380,67 @@ model MissionProgress {
   @@unique([empresaId, missionId, periodoReferencia])
   @@index([empresaId])
 }
+
+model DigitalAsset {
+  id             String         @id @default(cuid())
+  empresaId      String
+  empresa        Empresa        @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  nome           String
+  descricao      String?
+  tipo           String         // STL | THREE_MF | GCODE | OBJ
+  hashSha256     String         // Fingerprint unívoco
+  versaoAtualId  String?
+  thumbnailUrl   String?
+  status         String         @default("ativo") // ativo | arquivado
+  tags           String[]       @default([])
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  versoes        AssetVersion[]
+
+  @@index([empresaId])
+  @@index([hashSha256])
+  @@index([tipo])
+}
+
+model AssetVersion {
+  id                String              @id @default(cuid())
+  assetId           String
+  asset             DigitalAsset        @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  numeroVersao      Int                 @default(1) // v1, v2, v3
+  storageUrl        String
+  hashSha256        String
+  changelog         String?
+  autorProfileId    String?
+  volumeCm3         Float               @default(0)
+  pesoGramas        Float               @default(0)
+  larguraMm         Float               @default(0)
+  profundidadeMm    Float               @default(0)
+  alturaMm          Float               @default(0)
+  poligonosCount    Int                 @default(0)
+  metadadosFatiador String?             // JSON string (slicer, temperaturas, altura camada, etc)
+  createdAt         DateTime            @default(now())
+
+  inspecoesAi       AssetAiInspection[]
+
+  @@index([assetId])
+  @@index([hashSha256])
+}
+
+model AssetAiInspection {
+  id                      String       @id @default(cuid())
+  versionId               String
+  version                 AssetVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  scoreWarping            Int          @default(0) // 0-100
+  classificacaoWarping    String       @default("baixo")
+  temParedesFinas         Boolean      @default(false)
+  necessitaSuporte        Boolean      @default(false)
+  temperaturaBicoSugerida  Int          @default(210)
+  temperaturaMesaSugerida Int          @default(60)
+  alertasTecnicos         String[]     @default([])
+  recomendacoesIA         String[]     @default([])
+  createdAt               DateTime     @default(now())
+
+  @@index([versionId])
+}
+

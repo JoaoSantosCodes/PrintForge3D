@@ -26,6 +26,7 @@ import {
   Network,
   DollarSign,
   Gift,
+  FolderGit2,
 } from "lucide-react";
 import { logoutAction } from "@/app/actions/auth";
 import { getLowStockCountAction } from "@/app/actions/filaments";
@@ -96,6 +97,7 @@ export function Sidebar() {
         { label: "Filamentos", href: "/admin/filamentos", icon: Boxes, badge: lowStockCount > 0 ? `🔴 ${lowStockCount}` : null },
         { label: "Tintas & Pintura", href: "/admin/tintas", icon: Palette },
         { label: "Peças & Custos", href: "/admin/pecas", icon: Box },
+        { label: "Biblioteca DAM 3D", href: "/admin/biblioteca", icon: FolderGit2 },
       ],
     },
     {
